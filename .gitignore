@@ -1,0 +1,8 @@
+node_modules/*
+.idea/*
+encodings.xml
+/.idea/glazr-persistor.iml
+/.idea/modules.xml
+/.idea/scopes/scope_settings.xml
+/.idea/vcs.xml
+/test/support/config.js

@@ -1,0 +1,26 @@
+{
+  "name": "glazr-persistor",
+  "version": "0.0.2",
+  "description": "javascript persistor which supports localFile persistence.",
+  "main": "interface.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "glazr",
+    "persistor"
+  ],
+  "author": "glazr",
+  "license": "BSD-2-Clause",
+  "dependencies": {
+    "glazr-utils": "Glazr/glazr-utils",
+    "ldapjs": "^0.7.1",
+    "fs-extra": "^0.23.1",
+    "path": "^0.11.14"
+  },
+  "devDependencies": {
+    "mocha": "^2.2.5",
+    "should": "^7.0.4",
+    "sinon": "^1.16.1"
+  }
+}
