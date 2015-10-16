@@ -13,7 +13,7 @@
    *  options.url: "ldap://ipaddress:389"
    *  options.bindDn: "CN=admin,DC=ca"
    *  options.bindCredentials: "somepassword"
-   *  options.directoryDn: "ou=Glazr2Test,dc=glazr,dc=ca"
+   *  options.searchBase: "ou=Glazr2Test,dc=glazr,dc=ca"
    *  options.entryObjectClass: "groupOfNames"
    * @constructor
    */
@@ -24,7 +24,7 @@
         'url',
         'bindDn',
         'bindCredentials',
-        'directoryDn',
+        'searchBase',
         'entryObjectClass'
       ];
 
@@ -112,7 +112,7 @@
     var
       self = this;
 
-    self.search(this.directoryDn, 'sub', function (err, results) {
+    self.search(this.searchBase, 'sub', function (err, results) {
       if (err) {
         if (err.name === 'NoSuchObjectError') {
           return callback(null, []);

@@ -1,6 +1,6 @@
 {
   "name": "glazr-persistor",
-  "version": "0.0.2",
+  "version": "0.0.4",
   "description": "javascript persistor which supports localFile persistence.",
   "main": "interface.js",
   "scripts": {

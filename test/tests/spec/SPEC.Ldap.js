@@ -33,7 +33,7 @@
         url: '1',
         bindDn: '1',
         bindCredentials: '1',
-        directoryDn: '1',
+        searchBase: '1',
         entryObjectClass: '1'
       });
       resourceContents = undefined;
@@ -64,7 +64,7 @@
           e.message.should.match(/bindCredentials/);
         }
       });
-      it('should throw an error if no directoryDn specified', function () {
+      it('should throw an error if no searchBase specified', function () {
         try {
           persistor = new Persistor({
             url: '1',
@@ -73,7 +73,7 @@
           });
           persistor.should.equal('should not get here, should have thrown an error');
         } catch (e) {
-          e.message.should.match(/directoryDn/);
+          e.message.should.match(/searchBase/);
         }
       });
       it('should throw an error if no entryObjectClass specified', function () {
@@ -82,7 +82,7 @@
             url: '1',
             bindDn: '1',
             bindCredentials: '1',
-            directoryDn: '1'
+            searchBase: '1'
           });
           persistor.should.equal('should not get here, should have thrown an error');
         } catch (e) {
@@ -95,7 +95,7 @@
             url: '1',
             bindDn: '1',
             bindCredentials: '1',
-            directoryDn: '1',
+            searchBase: '1',
             entryObjectClass: '1'
           });
           should.exist(persistor);
@@ -210,7 +210,7 @@
           });
         });
         it('should call the callback with the error', function (done) {
-          persistor.search(persistor.directoryDn, 'sub', function (err, records) {
+          persistor.search(persistor.searchBase, 'sub', function (err, records) {
             err.should.equal(myError);
             should.not.exist(records);
             done();
@@ -231,7 +231,7 @@
           });
         });
         it('should call the callback with the error', function (done) {
-          persistor.search(persistor.directoryDn, 'sub', function (err, records) {
+          persistor.search(persistor.searchBase, 'sub', function (err, records) {
             err.should.equal(myError);
             should.not.exist(records);
             done();
@@ -252,7 +252,7 @@
           });
         });
         it('should call the callback with the error', function (done) {
-          persistor.search(persistor.directoryDn, 'sub', function (err, records) {
+          persistor.search(persistor.searchBase, 'sub', function (err, records) {
             err.should.equal(myError);
             should.not.exist(records);
             done();
@@ -273,7 +273,7 @@
           });
         });
         it('should call the callback with the error', function (done) {
-          persistor.search(persistor.directoryDn, 'sub', function (err, records) {
+          persistor.search(persistor.searchBase, 'sub', function (err, records) {
             err.should.equal(myError);
             should.not.exist(records);
             done();
@@ -294,7 +294,7 @@
           });
         });
         it('should return an empty array', function (done) {
-          persistor.search(persistor.directoryDn, 'sub', function (err, records) {
+          persistor.search(persistor.searchBase, 'sub', function (err, records) {
             should.not.exist(err);
             Object.prototype.toString.call(records).should.equal('[object Array]');
             records.length.should.equal(0);
@@ -330,7 +330,7 @@
           });
         });
         it('should return all the records', function (done) {
-          persistor.search(persistor.directoryDn, 'sub', function (err, records) {
+          persistor.search(persistor.searchBase, 'sub', function (err, records) {
             should.not.exist(err);
             Object.prototype.toString.call(records).should.equal('[object Array]');
             records.length.should.equal(3);

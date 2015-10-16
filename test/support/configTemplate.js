@@ -19,7 +19,7 @@
       url: '', // eg. 'ldap://127.0.0.1:389'
       bindDn: '', // eg. 'cn=rootAccount,dc=someOrg,dc=ca' 
       bindCredentials: '', // eg. 'rootAccountsPassword'
-      directoryDn: '', // eg. ou=theTopOuThatHasGroups,dc=someOrg,dc=ca
+      searchBase: '', // eg. ou=theTopOuThatHasGroups,dc=someOrg,dc=ca
       entryObjectClass: '' // eg. 'groupOfNames'
     }
   };
