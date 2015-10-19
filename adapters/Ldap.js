@@ -35,7 +35,6 @@
       }
       self[object] = options[object];
     });
-    this.memberAttr = 'member';
 
     this.client = this.connect();
   };
@@ -62,22 +61,73 @@
   };
 
   LdapPersistor.prototype.create = function (record, callback) {
-    var err = new Error();
-    err.code = 'METHODNOTIMPLEMENTED';
-    return callback(err);
-    //var
-    //  dn;
-    //if (!record.name) {
-    //  record.name = this.getNewName();
-    //}
-    //dn = record.name;
-    //delete record.name;
-    //this.client.add(dn, record, [], function (err) {
-    //  if (err) {
-    //    return callback(err);
-    //  }
-    //  return callback(null, dn);
-    //});
+    var
+      self = this,
+      i,
+      subDn,
+      dn;
+
+    // Prepare the record
+    record.objectClass = self.entryObjectClass;
+
+    // Get the dn
+    dn = record.name;
+    delete record.name;
+
+    // Get the super dn of the dn
+    subDn = dn;
+    if (!subDn) {
+      subDn = self.getNewDn();
+    }
+    subDn = subDn.split(',');
+    subDn[0] = subDn[1];
+    for (i = 2; i < subDn.length; i += 1) {
+      subDn[0] += ',' + subDn[i];
+    }
+    subDn = subDn[0];
+
+    // Check that super dn exists
+    self.search(subDn, 'base', function (err) {
+      if (err) {
+        if (err.code === 404) {
+          err.name = 'Path does not exist.';
+          err.message = 'The super dn, "' + subDn + '", does not exist.';
+        }
+        return callback(err);
+      }
+
+      // If super dn existed do the add!
+      return self.add(dn, record, callback);
+    }, null);
+  };
+
+  LdapPersistor.prototype.add = function (dn, record, callback) {
+    var
+      createOwnDn = false,
+      self = this;
+    self.authenticate(function (err) {
+      err = self.errorParser(err);
+      if (err) {
+        return callback(err);
+      }
+
+      if (!dn) {
+        createOwnDn = true;
+        dn = self.getNewDn();
+      }
+      try {
+        self.client.add(String(dn), record, [], function (err) {
+          err = self.errorParser(err);
+          if (createOwnDn && err && err.name === 'EntryAlreadyExistsError') {
+            return self.add(undefined, record, callback);
+          }
+          return callback(err, dn);
+        });
+      } catch (e) {
+        e = self.errorParser(e);
+        callback(e);
+      }
+    });
   };
 
   LdapPersistor.prototype.get = function (id, callback) {
@@ -85,26 +135,15 @@
       self = this;
 
     self.search(id, 'base', function (err, results) {
+      if (!err && results.length === 0) {
+        err = {name: 'NoSuchObjectError'};
+        err = self.errorParser(err);
+      }
       if (err) {
-        if (err.name === 'NoSuchObjectError' || (results && results.length < 1)) {
-          err = new Error();
-          err.code = 'NOTFOUND';
-          return callback(err);
-        }
         return callback(err);
       }
 
-      var
-        record = results[0];
-      if (record[self.memberAttr]) {
-        // We need to parse the members attr, so we need additional data
-        self.getAll(function (err, records) {
-          record = self.parseMembers(record, records);
-          return callback(null, record);
-        });
-      } else {
-        return callback(null, record);
-      }
+      return callback(null, results[0]);
     });
   };
 
@@ -112,82 +151,77 @@
     var
       self = this;
 
-    self.search(this.searchBase, 'sub', function (err, results) {
+    self.search(self.searchBase, 'sub', function (err, results) {
       if (err) {
         if (err.name === 'NoSuchObjectError') {
           return callback(null, []);
         }
         return callback(err);
       }
-      // Time to parse the results!
-      utils.forEach(results, function (index, record) {
-        results[index] = self.parseMembers(record, results);
-      });
 
       return callback(null, results);
     });
   };
 
   LdapPersistor.prototype.update = function (updatedRecord, callback) {
-    var err = new Error();
-    err.code = 'METHODNOTIMPLEMENTED';
-    return callback(err);
-  };
-
-  LdapPersistor.prototype.remove = function (id, callback) {
-    var err = new Error();
-    err.code = 'METHODNOTIMPLEMENTED';
-    return callback(err);
-
-    //var
-    //  self = this;
-    //self.authenticate(function (err) {
-    //  if (err) {
-    //    return callback(err);
-    //  }
-    //  self.search(id, 'sub', function (err, results) {
-    //    if (err) {
-    //      callback(err);
-    //    }
-    //    self.deleteAll(results, function (err) {
-    //      callback(err);
-    //    });
-    //  });
-    //});
-  };
-
-  LdapPersistor.prototype.deleteAll = function (records, callback, iteration) {
     var
-      self = this,
-      barrier = utils.syncBarrier(records.length, function (err) {
-        if (iteration > 30) {
-          callback(iteration + ' attempts have been made to delete the following records: ' + JSON.stringify(records));
-        } else if (err) {
-          self.deleteAll(records, callback);
-        } else {
-          callback();
-        }
-      });
+      oldRecord,
+      dn = updatedRecord.id,
+      self = this;
 
-    utils.forEach(records, function (index, record) {
-      self.deleteOne(record, function (err) {
-        if (!err) {
-          // Successfull deletion so remove from records
-          records.splice(index, 1);
+    delete updatedRecord.id;
+    oldRecord = JSON.parse(JSON.stringify(updatedRecord));
+    oldRecord.name = dn;
+
+    // Ensure the record actually exists
+    self.get(dn, function (err) {
+      if (err) {
+        return callback(err);
+      }
+      if (!updatedRecord.name) {
+        updatedRecord.name = dn;
+      }
+
+      // Remove old record
+      self.remove(dn, function (err) {
+        if (err) {
+          return callback(err);
         }
-        barrier(err);
+
+        // Create new record
+        self.create(updatedRecord, function (err, id) {
+          if (err) {
+            // If we failed to create, recreate the old one
+            self.create(oldRecord, function (err2, id) {
+              if (err2) {
+                return callback(err2);
+              }
+              callback(err);
+            });
+          } else {
+            callback(null, id);
+          }
+        });
       });
     });
   };
 
-  LdapPersistor.prototype.deleteOne = function (record, callback) {
-    this.client.del(record.dn, [], function (err) {
-      if (err && err.name === 'NoSuchObjectError') {
-        err = new Error();
-        err.code = 'NOTFOUND';
+  LdapPersistor.prototype.remove = function (id, callback) {
+    var
+      self = this;
+    self.authenticate(function (err) {
+      if (err) {
         return callback(err);
       }
-      return callback(err);
+
+      try {
+        self.client.del(String(id), [], function (err) {
+          err = self.errorParser(err);
+          return callback(err);
+        });
+      } catch (e) {
+        return callback(self.errorParser(e));
+      }
     });
   };
 
@@ -207,80 +241,44 @@
    *  sub: Look at every sub-entry.
    *  one: Look only at direct sub-entries.
    * @param callback
+   * @param filter - defaults to '(objectclass=' + this.entryObjectClass + ')'.
    */
-  LdapPersistor.prototype.search = function (dn, scope, callback) {
+  LdapPersistor.prototype.search = function (dn, scope, callback, filter) {
+    if (filter === undefined) {
+      filter = '(objectclass=' + this.entryObjectClass + ')';
+    }
     var
       self = this,
       results = [],
       opts = {
-        filter: '(objectclass=' + this.entryObjectClass + ')',
+        filter: filter,
         scope: scope
       };
 
-    this.client.search(dn, opts, function (err, res) {
-      if (err) {
-        return callback(err);
-      }
-
-      res.on('searchEntry', function (entry) {
-        results.push(self.formatData(entry));
-      });
-      res.on('searchReference', function (err) {
-        return callback(err);
-      });
-      res.on('error', function (err) {
-        return callback(err);
-      });
-      res.on('end', function (err) {
+    try {
+      self.client.search(String(dn), opts, function (err, res) {
+        err = self.errorParser(err);
         if (err) {
           return callback(err);
         }
-        return callback(null, results);
+
+        res.on('searchEntry', function (entry) {
+          results.push(self.formatData(entry));
+        });
+        res.on('searchReference', function (err) {
+          return callback(self.errorParser(err));
+        });
+        res.on('error', function (err) {
+          return callback(self.errorParser(err));
+        });
+        res.on('end', function (err) {
+          err = self.errorParser(err);
+          return callback(err, results);
+        });
       });
-    });
-  };
-
-  /**
-   * Transforms the member property of a record into 'groups' and 'users'
-   * properties.  Does nothing if no member property.
-   * @param {object} record - The record to transform.  (Already in interface form.)
-   * @param {Array} groupRecords - An array of all the group records.
-   * @returns {object} - The transformed record.
-   */
-  LdapPersistor.prototype.parseMembers = function (record, groupRecords) {
-    var
-      a,
-      b,
-      isGroup,
-      members,
-      rec = JSON.parse(JSON.stringify(record)); // create copy so we don't modify in place
-
-    if (rec[this.memberAttr]) {
-      members = rec[this.memberAttr];
-      // It is a group entry!
-      rec.groups = [];
-      rec.users = [];
-      for (a = 0; a < members.length; a += 1) {
-        isGroup = false;
-        for (b = 0; b < groupRecords.length; b += 1) {
-          if (members[a] === groupRecords[b].id) {
-            //The member is group
-            isGroup = true;
-            break;
-          }
-        }
-        // Add the entry to appropriate property
-        if (isGroup) {
-          rec.groups.push(members[a]);
-        } else {
-          // Assume it is a user
-          rec.users.push(members[a]);
-        }
-      }
-      // Finished sorting members, remove it to prevent data duplication
-      delete rec[this.memberAttr];
+    } catch (e) {
+      return callback(self.errorParser(e));
     }
-    return rec;
   };
 
   /**
@@ -309,20 +307,51 @@
   };
 
   /**
-   * Transforms expected interface format back to ldap records.
-   * @param {object} record
-   * @returns {object} - The transformed data
+   * Gets a new uniquely generated dn.
+   * @returns {string} The new dn.
    */
-  LdapPersistor.prototype.parseData = function (record) {
+  LdapPersistor.prototype.getNewDn = (function () {
+    var
+      uniId = 0;
 
-  };
-
-  LdapPersistor.prototype.getNewName = (function () {
-    var name = (new Date()).valueOf();
     return function () {
-      name += 1;
-      return 'cn=' + name;
+      uniId += 1;
+      return 'cn=' + (new Date()).valueOf() + uniId + ',' + this.searchBase;
     };
   }());
+
+  /**
+   * Translates errors into expected error values.
+   * @param {object} err - The original error.
+   * @returns {object} The translated error.
+   */
+  LdapPersistor.prototype.errorParser = function (err) {
+    if (!err || (!err.code && !err.message && !err.name)) {
+      // We don't really have an error
+      return undefined;
+    }
+    var
+      clientErrors = [
+        'EntryAlreadyExistsError',
+        'InvalidAttributeSyntaxError',
+        'UndefinedAttributeTypeError'
+      ],
+      error = new Error();
+    error.name = err.name;
+    error.message = err.message;
+    error.code = err.code;
+    error.stack = err.stack;
+    if (err && (err.name === 'NoSuchObjectError' || err.name === 'InvalidDistinguishedNameError')) {
+      error.code = 404;
+    } else if (utils.matchExists([err.name], clientErrors)) {
+      error.code = 400;
+    } else if (err.name === 'ProtocolError' && err.message === 'no attributes provided') {
+      error.code = 400;
+      error.name = 'MissingAttribute';
+      error.message = 'Missing required attributes to create an object of class "' + this.entryObjectClass + '"';
+    }
+    return error;
+  };
+
   module.exports = LdapPersistor;
 }());

@@ -14,7 +14,8 @@
 
     var
       ldap = require('ldapjs'),
-      NOT_FOUND_CODE = 'NOTFOUND',
+      NOT_FOUND_CODE = 404,
+      CLIENT_ERROR_CODE = 400,
       id,
       item = {param: 'blah'},
       myError = 'MahSpecialError!',
@@ -26,7 +27,9 @@
         return {
           on: function (event, callback) {},
           search: {},
-          del: {}
+          del: {},
+          bind: {},
+          add: {}
         };
       });
       persistor = new Persistor({
@@ -105,104 +108,25 @@
       });
     });
 
-    describe('#parseMembers(record, groupRecords)', function () {
-      var
-        record,
-        records,
-        result;
-      describe('record does not have member attribute', function () {
-        beforeEach(function () {
-          record = {id: 'id1'};
-          record['not' + persistor.memberAttr] = 'blah';
-          records = [
-            record,
-            {id: 'id2'},
-            {id: 'id3'}
-          ];
-          result = persistor.parseMembers(record, records);
-        });
-        it('should not modify the record', function () {
-          JSON.stringify(result).should.equal(JSON.stringify(record));
-        });
-      });
-      describe('record has member attribute', function () {
-        beforeEach(function () {
-          record = {id: 'id1'};
-          record[persistor.memberAttr] = ['id1', 'id2', 'id4', 'id5'];
-          records = [
-            record,
-            {id: 'id2'},
-            {id: 'id3'}
-          ];
-          result = persistor.parseMembers(record, records);
-        });
-        it('should not have member attribute anymore', function () {
-          should.not.exist(result[persistor.memberAttr]);
-        });
-        it('should sort member attributes into "groups"', function () {
-          Object.prototype.toString.call(result.groups).should.equal('[object Array]');
-          result.groups.length.should.equal(2);
-          result.groups[0].should.equal(records[0].id);
-          result.groups[1].should.equal(records[1].id);
-        });
-        it('should sort member attributes into "users"', function () {
-          Object.prototype.toString.call(result.users).should.equal('[object Array]');
-          result.users.length.should.equal(2);
-          result.users[0].should.equal('id4');
-          result.users[1].should.equal('id5');
-        });
-        it('should not modify the original record', function () {
-          JSON.stringify(result).should.not.equal(JSON.stringify(record));
-        });
-      });
-    });
-
-    describe('#formatData(record)', function () {
-      var
-        record,
-        result;
+    describe('#authenticate(callback)', function () {
       beforeEach(function () {
-        record = {
-          dn: 'id1',
-          attributes: [
-            {
-              type: 'type1',
-              vals: ['val1', 'val2']
-            },
-            {
-              type: 'type2',
-              vals: ['val3', 'val4']
-            }
-          ]
-        };
-        result = persistor.formatData(record);
+        sinon.stub(persistor.client, 'bind', function (user, pass, controls, callback) {
+          callback(myError);
+        });
       });
-      it('should not modify the original record', function () {
-        JSON.stringify(result).should.not.equal(JSON.stringify(record));
-      });
-      it('should not have attributes property anymore', function () {
-        should.not.exist(result.attributes);
-      });
-      it('should have "id"', function () {
-        should.exist(result.id);
-        result.id.should.equal(record.dn);
-      });
-      it('should have "name"', function () {
-        should.exist(result.name);
-        result.name.should.equal(record.dn);
-      });
-      it('should reformat attributes into own properties', function () {
-        var
-          i,
-          attr;
-        for (i = 0; i < record.attributes.length; i += 1) {
-          attr = record.attributes[i];
-          JSON.stringify(result[attr.type]).should.equal(JSON.stringify(attr.vals));
-        }
+      it('should call pass the error out to the callback', function () {
+        persistor.authenticate(function (err) {
+          err.should.equal(myError);
+        });
       });
     });
 
     describe('#search(dn, scope, callback)', function () {
+      beforeEach(function () {
+        sinon.stub(persistor, 'errorParser', function (err) {
+          return err;
+        });
+      });
       describe('search Error', function () {
         beforeEach(function () {
           sinon.stub(persistor.client, 'search', function (location, options, callback) {
@@ -275,7 +199,6 @@
         it('should call the callback with the error', function (done) {
           persistor.search(persistor.searchBase, 'sub', function (err, records) {
             err.should.equal(myError);
-            should.not.exist(records);
             done();
           });
         });
@@ -341,8 +264,285 @@
       });
     });
 
+    describe('#formatData(record)', function () {
+      var
+        record,
+        result;
+      beforeEach(function () {
+        record = {
+          dn: 'id1',
+          attributes: [
+            {
+              type: 'type1',
+              vals: ['val1', 'val2']
+            },
+            {
+              type: 'type2',
+              vals: ['val3', 'val4']
+            }
+          ]
+        };
+        result = persistor.formatData(record);
+      });
+      it('should not modify the original record', function () {
+        JSON.stringify(result).should.not.equal(JSON.stringify(record));
+      });
+      it('should not have attributes property anymore', function () {
+        should.not.exist(result.attributes);
+      });
+      it('should have "id"', function () {
+        should.exist(result.id);
+        result.id.should.equal(record.dn);
+      });
+      it('should have "name"', function () {
+        should.exist(result.name);
+        result.name.should.equal(record.dn);
+      });
+      it('should reformat attributes into own properties', function () {
+        var
+          i,
+          attr;
+        for (i = 0; i < record.attributes.length; i += 1) {
+          attr = record.attributes[i];
+          JSON.stringify(result[attr.type]).should.equal(JSON.stringify(attr.vals));
+        }
+      });
+    });
+
+    describe('#getNewDn()', function () {
+      it('should create unique dns', function () {
+        var
+          dn1 = persistor.getNewDn(),
+          dn2 = persistor.getNewDn();
+        dn1.should.not.equal(dn2);
+      });
+    });
+
+    describe('#errorParser(err)', function () {
+      it('should format the error', function () {
+        var
+          res,
+          myErr = {
+            code: 'blah',
+            name: 'blah',
+            message: 'blah',
+            stack: 'blah',
+            somethingelse: 'blah'
+          };
+        res = persistor.errorParser(myErr);
+        res.constructor.name.should.equal('Error');
+        res.code.should.equal(myErr.code);
+        res.name.should.equal(myErr.name);
+        res.message.should.equal(myErr.message);
+        res.stack.should.equal(myErr.stack);
+        should.not.exist(res.somethingelse);
+      });
+      it('should translate the NoSuchObjectError', function () {
+        var
+          res,
+          myErr = {
+            code: 'blah',
+            name: 'NoSuchObjectError',
+            message: 'blah',
+            stack: 'blah',
+            somethingelse: 'blah'
+          };
+        res = persistor.errorParser(myErr);
+        res.constructor.name.should.equal('Error');
+        res.code.should.equal(NOT_FOUND_CODE);
+        res.name.should.equal(myErr.name);
+        res.message.should.equal(myErr.message);
+        res.stack.should.equal(myErr.stack);
+        should.not.exist(res.somethingelse);
+      });
+      it('should translate the InvalidDistinguishedNameError', function () {
+        var
+          res,
+          myErr = {
+            code: 'blah',
+            name: 'InvalidDistinguishedNameError',
+            message: 'blah',
+            stack: 'blah',
+            somethingelse: 'blah'
+          };
+        res = persistor.errorParser(myErr);
+        res.constructor.name.should.equal('Error');
+        res.code.should.equal(NOT_FOUND_CODE);
+        res.name.should.equal(myErr.name);
+        res.message.should.equal(myErr.message);
+        res.stack.should.equal(myErr.stack);
+        should.not.exist(res.somethingelse);
+      });
+      it('should translate the EntryAlreadyExistsError', function () {
+        var
+          res,
+          myErr = {
+            code: 'blah',
+            name: 'EntryAlreadyExistsError',
+            message: 'blah',
+            stack: 'blah',
+            somethingelse: 'blah'
+          };
+        res = persistor.errorParser(myErr);
+        res.constructor.name.should.equal('Error');
+        res.code.should.equal(CLIENT_ERROR_CODE);
+        res.name.should.equal(myErr.name);
+        res.message.should.equal(myErr.message);
+        res.stack.should.equal(myErr.stack);
+        should.not.exist(res.somethingelse);
+      });
+      it('should translate the InvalidAttributeSyntaxError', function () {
+        var
+          res,
+          myErr = {
+            code: 'blah',
+            name: 'InvalidAttributeSyntaxError',
+            message: 'blah',
+            stack: 'blah',
+            somethingelse: 'blah'
+          };
+        res = persistor.errorParser(myErr);
+        res.constructor.name.should.equal('Error');
+        res.code.should.equal(CLIENT_ERROR_CODE);
+        res.name.should.equal(myErr.name);
+        res.message.should.equal(myErr.message);
+        res.stack.should.equal(myErr.stack);
+        should.not.exist(res.somethingelse);
+      });
+      it('should translate the UndefinedAttributeTypeError', function () {
+        var
+          res,
+          myErr = {
+            code: 'blah',
+            name: 'UndefinedAttributeTypeError',
+            message: 'blah',
+            stack: 'blah',
+            somethingelse: 'blah'
+          };
+        res = persistor.errorParser(myErr);
+        res.constructor.name.should.equal('Error');
+        res.code.should.equal(CLIENT_ERROR_CODE);
+        res.name.should.equal(myErr.name);
+        res.message.should.equal(myErr.message);
+        res.stack.should.equal(myErr.stack);
+        should.not.exist(res.somethingelse);
+      });
+      it('should translate the ProtocolError with "no attributes provided"', function () {
+        var
+          res,
+          myErr = {
+            code: 'blah',
+            name: 'ProtocolError',
+            message: 'no attributes provided',
+            stack: 'blah',
+            somethingelse: 'blah'
+          };
+        res = persistor.errorParser(myErr);
+        res.constructor.name.should.equal('Error');
+        res.code.should.equal(CLIENT_ERROR_CODE);
+        res.name.should.not.equal(myErr.name);
+        res.message.should.not.equal(myErr.message);
+        res.stack.should.equal(myErr.stack);
+        should.not.exist(res.somethingelse);
+      });
+      it('should translate the ProtocolError without "no attributes provided"', function () {
+        var
+          res,
+          myErr = {
+            code: 'blah',
+            name: 'ProtocolError',
+            message: 'blah',
+            stack: 'blah',
+            somethingelse: 'blah'
+          };
+        res = persistor.errorParser(myErr);
+        res.constructor.name.should.equal('Error');
+        res.code.should.equal(res.code);
+        res.name.should.equal(myErr.name);
+        res.message.should.equal(myErr.message);
+        res.stack.should.equal(myErr.stack);
+        should.not.exist(res.somethingelse);
+      });
+
+
+    });
+
+    describe('#add(dn, record, callback)', function () {
+      beforeEach(function () {
+        sinon.stub(persistor, 'errorParser', function (err) {
+          return err;
+        });
+      });
+      describe('authetication error', function () {
+        beforeEach(function () {
+          sinon.stub(persistor, 'authenticate', function (callback) {
+            callback(myError);
+          });
+        });
+        it('should return the error', function (done) {
+          persistor.add('', {}, function (err, id) {
+            should.exist(err);
+            err.should.equal(myError);
+            should.not.exist(id);
+            done();
+          });
+        });
+      });
+      describe('client add error', function () {
+        beforeEach(function () {
+          sinon.stub(persistor, 'authenticate', function (callback) {
+            callback();
+          });
+          sinon.stub(persistor.client, 'add', function (dn, record, controls, callback) {
+            callback(myError);
+          });
+        });
+        it('should return the error', function (done) {
+          persistor.add('', {}, function (err, id) {
+            should.exist(err);
+            err.should.equal(myError);
+            done();
+          });
+        });
+      });
+      describe('successful add', function () {
+        var
+          myId = 'blah';
+        beforeEach(function () {
+          sinon.stub(persistor, 'authenticate', function (callback) {
+            callback();
+          });
+          sinon.stub(persistor.client, 'add', function (dn, record, controls, callback) {
+            callback();
+          });
+        });
+        describe('id is specified', function () {
+          it('should return the id', function (done) {
+            persistor.add(myId, {}, function (err, newId) {
+              should.not.exist(err);
+              newId.should.equal(myId);
+              done();
+            });
+          });
+        });
+        describe('id is not specified', function () {
+          beforeEach(function () {
+            sinon.stub(persistor, 'getNewDn', function () {
+              return myId;
+            });
+          });
+          it('should create and return a new id', function (done) {
+            persistor.add(undefined, {}, function (err, newId) {
+              should.not.exist(err);
+              newId.should.equal(myId);
+              done();
+            });
+          });
+        })
+      });
+    });
+
     //describe("#create(item, callback)", function () {
-    //
     //  describe('readJson Error', function () {
     //    beforeEach(function () {
     //      sinon.stub(persistor, 'readJson', function (callback) {
@@ -449,7 +649,6 @@
     //      });
     //    });
     //  });
-    //
     //});
 
     describe('#get(id, callback)', function () {
@@ -468,87 +667,28 @@
           });
         });
       });
-      describe('search no entries found', function () {
-        beforeEach(function () {
-          sinon.stub(persistor, 'search', function (dn, scope, callback) {
-            callback({name: 'NoSuchObjectError'});
-          });
-        });
-        it('should return not found error', function (done) {
-          persistor.get('someDN', function (err, record) {
-            should.exist(err);
-            err.code.should.equal(NOT_FOUND_CODE);
-            should.not.exist(record);
-            done();
-          });
-        });
-      });
       describe("resource exists and has content", function () {
-        describe('record does not have member attribute', function () {
-          var
-            entries = [
-              {id: 1, param: 'blah1'},
-              {id: 2, param: 'blah2'},
-              {id: 3, param: 'blah3'}
-            ];
-          beforeEach(function () {
-            entries = [
-              {id: 1, param: 'blah1'},
-              {id: 2, param: 'blah2'},
-              {id: 3, param: 'blah3'}
-            ];
-            sinon.stub(persistor, 'parseMembers', function () {
-              throw new Error('should not get here');
-            });
-            sinon.stub(persistor, 'search', function (dn, scope, callback) {
-              callback(null, [entries[1]]);
-            });
-          });
-          it('should return the requested item', function (done) {
-            persistor.get(2, function (err, record) {
-              should.not.exist(err);
-              JSON.stringify(record).should.equal(JSON.stringify(entries[1]));
-              done();
-            });
+        var
+          entries = [
+            {id: 1, param: 'blah1'},
+            {id: 2, param: 'blah2'},
+            {id: 3, param: 'blah3'}
+          ];
+        beforeEach(function () {
+          entries = [
+            {id: 1, param: 'blah1'},
+            {id: 2, param: 'blah2'},
+            {id: 3, param: 'blah3'}
+          ];
+          sinon.stub(persistor, 'search', function (dn, scope, callback) {
+            callback(null, [entries[1]]);
           });
         });
-        describe('record has member attribute', function () {
-          var
-            entries;
-          beforeEach(function () {
-            var i;
-            entries = [
-              {id: 1, param: 'blah1'},
-              {id: 2, param: 'blah2'},
-              {id: 3, param: 'blah3'}
-            ];
-            for (i = 0; i < entries.length; i += 1) {
-              entries[i][persistor.memberAttr] = [1, 2];
-            }
-            sinon.stub(persistor, 'parseMembers', function (record) {
-              record.groups = [2];
-              record.users = [1];
-              delete record[persistor.memberAttr];
-              return record;
-            });
-            sinon.stub(persistor, 'search', function (dn, scope, callback) {
-              callback(null, [entries[1]]);
-            });
-          });
-          it('should return the requested item with parsedMembers', function (done) {
-            var reqId = 2;
-            persistor.get(reqId, function (err, record) {
-              should.not.exist(err);
-              record.id.should.equal(reqId);
-              should.not.exist(record[persistor.memberAttr]);
-              Object.prototype.toString.call(record.groups).should.equal('[object Array]');
-              Object.prototype.toString.call(record.users).should.equal('[object Array]');
-              record.groups.length.should.equal(1);
-              record.users.length.should.equal(1);
-              record.groups[0].should.equal(2);
-              record.users[0].should.equal(1);
-              done();
-            });
+        it('should return the requested item', function (done) {
+          persistor.get(2, function (err, record) {
+            should.not.exist(err);
+            JSON.stringify(record).should.equal(JSON.stringify(entries[1]));
+            done();
           });
         });
       });
@@ -571,9 +711,6 @@
       });
       describe('search no entries found', function () {
         beforeEach(function () {
-          sinon.stub(persistor, 'parseMembers', function (record) {
-            return record;
-          });
           sinon.stub(persistor, 'search', function (dn, scope, callback) {
             callback({name: 'NoSuchObjectError'});
           });
@@ -595,9 +732,6 @@
             {id: 2, param: 'blah3'}
           ];
         beforeEach(function () {
-          sinon.stub(persistor, 'parseMembers', function (record) {
-            return record;
-          });
           sinon.stub(persistor, 'search', function (dn, scope, callback) {
             callback(null, entries);
           });

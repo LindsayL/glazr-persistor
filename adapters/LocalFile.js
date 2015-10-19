@@ -18,6 +18,7 @@
       + 'No filePath specified in options.config (see readme).');
     }
     this.filePath = options.filePath;
+    this.notFoundError = 404;
   };
 
   LocalPersistor.prototype.create = function (record, callback) {
@@ -77,7 +78,7 @@
         callback(err, result);
       } else {
         err = new Error();
-        err.code = 'NOTFOUND';
+        err.code = self.notFoundError;
         callback(err);
       }
     });
@@ -118,7 +119,7 @@
       } else {
         // Else we didn't find the record
         err = new Error();
-        err.code = 'NOTFOUND';
+        err.code = self.notFoundError;
         callback(err);
       }
     });
@@ -155,7 +156,7 @@
       } else {
         // Else we didn't find the record
         err = new Error();
-        err.code = 'NOTFOUND';
+        err.code = self.notFoundError;
         callback(err);
       }
     });

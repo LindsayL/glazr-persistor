@@ -15,7 +15,7 @@
     var
       fse = require('fs-extra'),
       filePath = path.resolve('someTempDir/someTempFile.json'),
-      NOT_FOUND_CODE = 'NOTFOUND',
+      NOT_FOUND_CODE = 404,
       id,
       item = {param: 'blah'},
       myError = 'MahSpecialError!',

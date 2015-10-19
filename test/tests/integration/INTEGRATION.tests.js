@@ -1,17 +1,21 @@
-/*jslint node:true, unparam: true*/
+/*jslint node:true, unmember: true*/
 /*globals describe, it, before, beforeEach, after, afterEach, vars, path, fse*/
 
 (function () {
   'use strict';
 
 
-  module.exports = function (persistor, removeResourceFn) {
+  module.exports = function (persistor, removeResourceFn, testObjects, testParam) {
     var
       should = require('should'),
+      utils = require('glazr-utils'),
       NO_ID_CODE = 'NOID',
-      NOT_FOUND_CODE = 'NOTFOUND',
+      NOT_FOUND_CODE = 404,
       id,
-      item = {param: 'blah'};
+      item1 = testObjects[0],
+      item2 = testObjects[1],
+      item3 = testObjects[2],
+      updatedItem = testObjects[3];
 
     beforeEach(function (done) {
       removeResourceFn(done);
@@ -20,11 +24,11 @@
       removeResourceFn(done);
     });
 
-    describe("#create(item, callback)", function () {
+    describe("#create(item1, callback)", function () {
 
       describe("resource does not exist", function () {
         beforeEach(function (done) {
-          persistor.create(item, function (err, recordId) {
+          persistor.create(item1, function (err, recordId) {
             should.not.exist(err);
             should.exist(recordId);
             id = recordId;
@@ -35,7 +39,7 @@
           persistor.get(id, function (err, record) {
             should.not.exist(err);
             record.id.should.equal(id);
-            record.param.should.equal(item.param);
+            JSON.stringify(record[testParam]).should.equal(JSON.stringify(item1[testParam]));
             done();
           });
         });
@@ -44,7 +48,7 @@
       describe("resource exists", function () {
         beforeEach(function (done) {
           // Should create the resource
-          persistor.create(item, function (err, recordId) {
+          persistor.create(item1, function (err, recordId) {
             should.not.exist(err);
             should.exist(recordId);
             id = recordId;
@@ -52,15 +56,12 @@
             persistor.get(id, function (err, record) {
               should.not.exist(err);
               record.id.should.equal(id);
-              record.param.should.equal(item.param);
+              JSON.stringify(record[testParam]).should.equal(JSON.stringify(item1[testParam]));
               done();
             });
           });
         });
         it('should append new entry to the resource with unique id', function (done) {
-          var
-            item2 = {param: 'blah2'};
-
           // Call create
           persistor.create(item2, function (err, recordId) {
             should.not.exist(err);
@@ -70,13 +71,13 @@
             persistor.get(id, function (err, record) {
               should.not.exist(err);
               record.id.should.equal(id);
-              record.param.should.equal(item.param);
+              JSON.stringify(record[testParam]).should.equal(JSON.stringify(item1[testParam]));
 
               // Check new entry
               persistor.get(recordId, function (err, record) {
                 should.not.exist(err);
                 record.id.should.equal(recordId);
-                record.param.should.equal(item2.param);
+                JSON.stringify(record[testParam]).should.equal(JSON.stringify(item2[testParam]));
                 done();
               });
             });
@@ -101,7 +102,7 @@
       describe("resource exists and is empty", function () {
         beforeEach(function (done) {
           // create the file
-          persistor.create(item, function (err, recordId) {
+          persistor.create(item1, function (err, recordId) {
             should.not.exist(err);
             should.exist(recordId);
             id = recordId;
@@ -125,10 +126,7 @@
         var
           id1,
           id2,
-          id3,
-          item1 = {param: 'blah1'},
-          item2 = {param: 'blah2'},
-          item3 = {param: 'blah3'};
+          id3;
         beforeEach(function (done) {
           persistor.create(item1, function (err, recordId) {
             should.not.exist(err);
@@ -158,32 +156,32 @@
         it('should return the first item', function (done) {
           persistor.get(id1, function (err, record) {
             should.not.exist(err);
-            record.param.should.equal(item1.param);
             record.id.should.equal(id1);
+            JSON.stringify(record[testParam]).should.equal(JSON.stringify(item1[testParam]));
             done();
           });
         });
         it('should return the second item', function (done) {
           persistor.get(id2, function (err, record) {
             should.not.exist(err);
-            record.param.should.equal(item2.param);
             record.id.should.equal(id2);
+            JSON.stringify(record[testParam]).should.equal(JSON.stringify(item2[testParam]));
             done();
           });
         });
         it('should return the third item', function (done) {
           persistor.get(id3, function (err, record) {
             should.not.exist(err);
-            record.param.should.equal(item3.param);
             record.id.should.equal(id3);
+            JSON.stringify(record[testParam]).should.equal(JSON.stringify(item3[testParam]));
             done();
           });
         });
         it('should return the second item when passed a string for id as well', function (done) {
-          persistor.get(JSON.stringify(id2), function (err, record) {
+          persistor.get(id2, function (err, record) {
             should.not.exist(err);
-            record.param.should.equal(item2.param);
             record.id.should.equal(id2);
+            JSON.stringify(record[testParam]).should.equal(JSON.stringify(item2[testParam]));
             done();
           });
         });
@@ -206,7 +204,7 @@
       describe("resource exists and is empty", function () {
         beforeEach(function (done) {
           // create the file
-          persistor.create(item, function (err, recordId) {
+          persistor.create(item1, function (err, recordId) {
             should.not.exist(err);
             should.exist(recordId);
             id = recordId;
@@ -235,10 +233,7 @@
         var
           id1,
           id2,
-          id3,
-          item1 = {param: 'blah1'},
-          item2 = {param: 'blah2'},
-          item3 = {param: 'blah3'};
+          id3;
         beforeEach(function (done) {
           persistor.create(item1, function (err, recordId) {
             should.not.exist(err);
@@ -262,12 +257,12 @@
             should.not.exist(err);
             Object.prototype.toString.call(records).should.equal('[object Array]');
             records.length.should.equal(3);
-            records[0].param.should.equal(item1.param);
             records[0].id.should.equal(id1);
-            records[1].param.should.equal(item2.param);
+            JSON.stringify(records[0][testParam]).should.equal(JSON.stringify(item1[testParam]));
             records[1].id.should.equal(id2);
-            records[2].param.should.equal(item3.param);
+            JSON.stringify(records[1][testParam]).should.equal(JSON.stringify(item2[testParam]));
             records[2].id.should.equal(id3);
+            JSON.stringify(records[2][testParam]).should.equal(JSON.stringify(item3[testParam]));
             done();
           });
         });
@@ -277,7 +272,7 @@
     describe('#update(id, record, callback)', function () {
       describe("updated record has no id", function () {
         it('should return an error', function (done) {
-          persistor.update({param: 'blah'}, function (err) {
+          persistor.update({member: 'blah'}, function (err) {
             should.exist(err);
             err.code.should.equal(NO_ID_CODE);
             done();
@@ -307,7 +302,7 @@
       });
       describe("resource exists but record does not", function () {
         beforeEach(function (done) {
-          persistor.create(item, function (err, recordId) {
+          persistor.create(item1, function (err, recordId) {
             should.not.exist(err);
             should.exist(recordId);
             id = recordId;
@@ -336,13 +331,10 @@
       });
       describe("resource exists and has content", function () {
         var
+          myUpdatedItem,
           id1,
           id2,
-          id3,
-          item1 = {param: 'blah1'},
-          item2 = {param: 'blah2'},
-          item3 = {param: 'blah3'},
-          updatedItem = {param: 'newblah'};
+          id3;
         beforeEach(function (done) {
           persistor.create(item1, function (err, recordId) {
             should.not.exist(err);
@@ -362,60 +354,122 @@
           });
         });
         it('should update only the first record', function (done) {
-          updatedItem.id = id1;
-          persistor.update(updatedItem, function (err) {
-            should.not.exist(err);
-            persistor.getAll(function (err, records) {
+          persistor.get(id1, function (err, record) {
+            myUpdatedItem = utils.merge(record, updatedItem);
+            persistor.update(myUpdatedItem, function (err, id) {
               should.not.exist(err);
-              Object.prototype.toString.call(records).should.equal('[object Array]');
-              records.length.should.equal(3);
-              records[0].param.should.equal(updatedItem.param);
-              records[0].id.should.equal(id1);
-              records[1].param.should.equal(item2.param);
-              records[1].id.should.equal(id2);
-              records[2].param.should.equal(item3.param);
-              records[2].id.should.equal(id3);
-              done();
+              persistor.get(id1, function (err, record) {
+                should.not.exist(err);
+                record.id.should.equal(id1);
+                JSON.stringify(record[testParam]).should.equal(JSON.stringify(myUpdatedItem[testParam]));
+                persistor.get(id2, function (err, record) {
+                  should.not.exist(err);
+                  record.id.should.equal(id2);
+                  JSON.stringify(record[testParam]).should.equal(JSON.stringify(item2[testParam]));
+                  persistor.get(id3, function (err, record) {
+                    record.id.should.equal(id3);
+                    JSON.stringify(record[testParam]).should.equal(JSON.stringify(item3[testParam]));
+                    done();
+                  });
+                });
+              });
             });
           });
         });
         it('should update only the second record', function (done) {
-          updatedItem.id = id2;
-          persistor.update(updatedItem, function (err) {
-            should.not.exist(err);
-            persistor.getAll(function (err, records) {
+          persistor.get(id2, function (err, record) {
+            myUpdatedItem = utils.merge(record, updatedItem);
+            persistor.update(myUpdatedItem, function (err) {
               should.not.exist(err);
-              Object.prototype.toString.call(records).should.equal('[object Array]');
-              records.length.should.equal(3);
-              records[0].param.should.equal(item1.param);
-              records[0].id.should.equal(id1);
-              records[1].param.should.equal(updatedItem.param);
-              records[1].id.should.equal(id2);
-              records[2].param.should.equal(item3.param);
-              records[2].id.should.equal(id3);
-              done();
+              persistor.get(id2, function (err, record) {
+                should.not.exist(err);
+                record.id.should.equal(id2);
+                JSON.stringify(record[testParam]).should.equal(JSON.stringify(myUpdatedItem[testParam]));
+                persistor.get(id1, function (err, record) {
+                  should.not.exist(err);
+                  record.id.should.equal(id1);
+                  JSON.stringify(record[testParam]).should.equal(JSON.stringify(item1[testParam]));
+                  persistor.get(id3, function (err, record) {
+                    record.id.should.equal(id3);
+                    JSON.stringify(record[testParam]).should.equal(JSON.stringify(item3[testParam]));
+                    done();
+                  });
+                });
+              });
             });
           });
         });
         it('should update only the third record', function (done) {
-          updatedItem.id = id3;
-          persistor.update(updatedItem, function (err) {
-            should.not.exist(err);
-            persistor.getAll(function (err, records) {
+          persistor.get(id3, function (err, record) {
+            myUpdatedItem = utils.merge(record, updatedItem);
+            persistor.update(myUpdatedItem, function (err) {
               should.not.exist(err);
-              Object.prototype.toString.call(records).should.equal('[object Array]');
-              records.length.should.equal(3);
-              records[0].param.should.equal(item1.param);
-              records[0].id.should.equal(id1);
-              records[1].param.should.equal(item2.param);
-              records[1].id.should.equal(id2);
-              records[2].param.should.equal(updatedItem.param);
-              records[2].id.should.equal(id3);
+              persistor.get(id3, function (err, record) {
+                should.not.exist(err);
+                record.id.should.equal(id3);
+                JSON.stringify(record[testParam]).should.equal(JSON.stringify(myUpdatedItem[testParam]));
+                persistor.get(id2, function (err, record) {
+                  should.not.exist(err);
+                  record.id.should.equal(id2);
+                  JSON.stringify(record[testParam]).should.equal(JSON.stringify(item2[testParam]));
+                  persistor.get(id1, function (err, record) {
+                    record.id.should.equal(id1);
+                    JSON.stringify(record[testParam]).should.equal(JSON.stringify(item1[testParam]));
+                    done();
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+
+    describe("#remove(id, callback)", function () {
+
+      describe("resource does not exist", function () {
+        it('should throw an error', function (done) {
+          persistor.get(id, function (err, record) {
+            should.exist(err);
+            err.code.should.equal(NOT_FOUND_CODE);
+            should.not.exist(record);
+            done();
+          });
+        });
+      });
+
+      describe("resource exists", function () {
+        beforeEach(function (done) {
+          // Should create the resource
+          persistor.create(item1, function (err, recordId) {
+            should.not.exist(err);
+            should.exist(recordId);
+            id = recordId;
+            // Confirm the first entry is correct
+            persistor.get(id, function (err, record) {
+              should.not.exist(err);
+              record.id.should.equal(id);
+              JSON.stringify(record[testParam]).should.equal(JSON.stringify(item1[testParam]));
+              done();
+            });
+          });
+        });
+        it('should remove the entry', function (done) {
+          // Call create
+          persistor.remove(id, function (err) {
+            should.not.exist(err);
+
+            // Check that the entry is gone
+            persistor.get(id, function (err, record) {
+              should.exist(err);
+              err.code.should.equal(NOT_FOUND_CODE);
+              should.not.exist(record);
               done();
             });
           });
         });
       });
+
     });
   };
 

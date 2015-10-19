@@ -7,23 +7,25 @@
   var
     should = require('should'),
     path = require('path'),
+    utils = require('glazr-utils'),
     testSuite = require('./INTEGRATION.tests'),
     Persistor = require(path.resolve("./Interface.js")),
     persistor,
+    testParam,
+    testObjects,
+    temp,
     options,
     config,
     removeResourceFn;
 
   describe("INTEGRATION", function () {
-    before(function () {
-      try {
-        config = require('../../support/config');
-      } catch (e) {
-        e.message += '\n!!!Please create the file "test/support/config.js" '
-          + 'according to the instructions found in "test/support/configTemplate.js".!!!';
-        throw e;
-      }
-    });
+    try {
+      config = require('../../support/config');
+    } catch (e) {
+      e.message += '\n!!!Please create the file "test/support/config.js" '
+        + 'according to the instructions found in "test/support/configTemplate.js".!!!';
+      throw e;
+    }
 
     describe('LocalFile', function () {
 
@@ -49,67 +51,74 @@
         });
       };
 
-      testSuite(persistor, removeResourceFn);
+      testParam = 'param';
+      testObjects = [];
+      temp = {};
+      temp[testParam] = 'blah1';
+      testObjects.push(temp);
+      temp[testParam] = 'blah2';
+      testObjects.push(temp);
+      temp[testParam] = 'blah3';
+      testObjects.push(temp);
+      temp[testParam] = 'blah4';
+      testObjects.push(temp);
+
+      testSuite(persistor, removeResourceFn, testObjects, testParam);
     });
 
-    // TODO re-add and finish implementing
-    //describe('Ldap', function () {
-    //  var
-    //    ldap = require('ldapjs'),
-    //    options,
-    //    server;
-    //  before(function (done) {
-    //    options = {
-    //      type: 'Ldap',
-    //      config: config.Ldap
-    //    };
-    //    // Create test ldap
-    //    //server = ldap.createServer();
-    //    //server.listen(port, function (err) {
-    //    //  should.not.exist(err);
-    //    //  console.log('Ldap listening on: ' + server.url);
-    //    //
-    //    //    server.bind(options.config.bindDn, function (req, res, next) {
-    //    //      if (req.dn.toString() !== options.config.bindDn ||
-    //    //        req.credentials !== options.config.bindCredentials) {
-    //    //        return next(new ldap.InvalidCredentialsError());
-    //    //      }
-    //    //      res.end();
-    //    //      return next();
-    //    //    });
-    //
-    //    // Init persistor
-    //    persistor = new Persistor(options);
-    //    done();
-    //    //});
-    //  });
-    //
-    //  after(function (done) {
-    //    // Destroy ldap server
-    //    //server.close();
-    //    done();
-    //  });
-    //
-    //  // Create removeResourceFn
-    //  removeResourceFn = function (cb) {
-    //    //var
-    //    //  client;
-    //    //client = ldap.createClient({url: options.config.url});
-    //    //client.bind(options.config.bindDn, options.config.bindCredentials, [], function (err) {
-    //    //  should.not.exist(err);
-    //    //  client.del(options.config.directoryDn, [], function (err) {
-    //    //    should.not.exist(JSON.stringify(err));
-    //    //    cb();
-    //    //  });
-    //    //});
-    //    persistor.remove(options.config.directoryDn, function (err) {
-    //      should.not.exist(err);
-    //      cb();
-    //    });
-    //  };
-    //
-    //  testSuite(persistor, removeResourceFn);
-    //});
+    describe('Ldap', function () {
+      options = {
+        type: 'Ldap',
+        config: config.Ldap
+      };
+
+      // Init persistor
+      persistor = new Persistor(options);
+
+      // Create removeResourceFn
+      removeResourceFn = function (done) {
+        var
+          mutexName = 'ldapModMutex',
+          barrier;
+
+        persistor.getAll(function (err, records) {
+          if (err) {
+            should.not.exist(err);
+            return done();
+          }
+          barrier = utils.syncBarrier(records.length, function (err) {
+            should.not.exist(err);
+            done();
+          });
+          utils.forEach(records, function (index, record) {
+            if (record.id !== options.config.searchBase) {
+              utils.getMutex(mutexName, function (releaseMutex) {
+                persistor.remove(record.id, function (err) {
+                  releaseMutex();
+                  barrier(err);
+                });
+              })
+            } else {
+              barrier();
+            }
+          })
+        });
+      };
+
+      testParam = 'member';
+      testObjects = [];
+      temp = {};
+      temp[testParam] = ['cn=blah1', 'cn=blahblah1'];
+      testObjects.push(temp);
+      temp[testParam] = ['cn=blah2', 'cn=blahblah2'];
+      testObjects.push(temp);
+      temp[testParam] = ['cn=blah3', 'cn=blahblah3'];
+      testObjects.push(temp);
+      temp[testParam] = ['cn=blah4', 'cn=blahblah4'];
+      testObjects.push(temp);
+
+      testSuite(persistor, removeResourceFn, testObjects, testParam);
+    });
 
   });
 
