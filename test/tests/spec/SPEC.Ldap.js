@@ -542,7 +542,7 @@
       });
     });
 
-    describe.only("#create(item, callback)", function () {
+    describe("#create(item, callback)", function () {
       var
         myId = 'blah';
       beforeEach(function () {

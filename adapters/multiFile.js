@@ -60,8 +60,11 @@
     var self = this;
     fse.readJson(self.dir + '/' + id + '.json', function (err, contents) {
       if (err) {
-        callback(err);
-        return;
+        if (err.code === 'ENOENT') {
+          err = new Error();
+          err.code = self.notFoundError;
+        }
+        return callback(err);
       }
 
       callback(null, contents);
@@ -81,50 +84,25 @@
   };
 
   MultiFilePersistor.prototype.update = function (updatedRecord, callback) {
-    var self = this;
+    var
+      self = this;
 
-    if (typeof data === 'string') {
-      try {
-        data = JSON.parse(data);
-      } catch (err) {
-        callback(err);
-        return;
+    self.get(updatedRecord.id, function (err) {
+      if (err) {
+        return callback(err);
       }
-    }
-
-    self.get(id, function (err) {
-      if (!!err) {
+      fse.writeJson(self.dir + '/' + updatedRecord.id + '.json', updatedRecord, function (err) {
         callback(err);
-        return;
-      }
-
-      fse.writeJson(self.dir + '/' + id + '.json', data, function (err2) {
-        callback(err2);
       });
     });
   };
 
   MultiFilePersistor.prototype.remove = function (id, callback) {
-    var self = this;
+    var
+      self = this;
 
-    if (typeof data === 'string') {
-      try {
-        data = JSON.parse(data);
-      } catch (err) {
-        callback(err);
-        return;
-      }
-    }
-
-    self.get(id, function (err) {
-      if (!!err) {
-        callback(err);
-        return;
-      }
-
-      fse.writeJson(self.dir + '/' + id + '.json', data, function (err2) {
-        callback(err2);
-      });
+    fse.remove(self.dir + '/' + id + '.json', function (err) {
+      callback(err);
     });
   };
 
