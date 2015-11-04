@@ -120,7 +120,7 @@
       testSuite(persistor, removeResourceFn, testObjects, testParam);
     });
 
-    describe.only('MultiFile', function () {
+    describe('MultiFile', function () {
 
       // Init persistor
       var

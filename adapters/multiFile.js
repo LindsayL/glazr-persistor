@@ -6,6 +6,7 @@
   var
     fse = require('fs-extra'),
     path = require('path'),
+    utils = require('glazr-utils'),
     MultiFilePersistor;
 
 
@@ -72,14 +73,30 @@
   };
 
   MultiFilePersistor.prototype.getAll = function (callback) {
-    var self = this;
-    fse.readJson(self.dir + '/' + id + '.json', function (err, contents) {
-      if (err) {
-        callback(err);
-        return;
+    var
+      records = [],
+      self = this;
+    fse.readdir(self.dir, function (err, files) {
+      if (files) {
+        var
+          barrier = utils.syncBarrier(files.length, function (err) {
+            callback(err, records);
+          });
+        utils.forEach(files, function (index, file) {
+          fse.readJson(path.join(self.dir, file), function (err, record) {
+            if (err) {
+              return barrier(err);
+            }
+            records.push(record);
+            barrier();
+          });
+        });
+      } else {
+        if (err.code === 'ENOENT') {
+          return callback(null, records);
+        }
+        callback(err, records);
       }
-
-      callback(null, contents);
     });
   };
 

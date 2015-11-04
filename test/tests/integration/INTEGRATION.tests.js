@@ -257,12 +257,25 @@
             should.not.exist(err);
             Object.prototype.toString.call(records).should.equal('[object Array]');
             records.length.should.equal(3);
-            records[0].id.should.equal(id1);
-            JSON.stringify(records[0][testParam]).should.equal(JSON.stringify(item1[testParam]));
-            records[1].id.should.equal(id2);
-            JSON.stringify(records[1][testParam]).should.equal(JSON.stringify(item2[testParam]));
-            records[2].id.should.equal(id3);
-            JSON.stringify(records[2][testParam]).should.equal(JSON.stringify(item3[testParam]));
+            var
+              i,
+              ids = [id1, id2, id3],
+              content = [
+                JSON.stringify(item1[testParam]),
+                JSON.stringify(item2[testParam]),
+                JSON.stringify(item3[testParam])
+              ];
+
+            utils.forEach(records, function (index, record) {
+              // Find the matching record
+              for (i = 0; i < ids.length; i += 1) {
+                if (record.id === ids[i]) {
+                  break;
+                }
+              }
+              record.id.should.equal(ids[i]);
+              JSON.stringify(record[testParam]).should.equal(content[i]);
+            });
             done();
           });
         });
