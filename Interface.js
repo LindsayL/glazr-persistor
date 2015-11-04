@@ -43,6 +43,9 @@
       case 'Ldap':
         persPath = 'Ldap';
         break;
+      case 'MultiFile':
+        persPath = 'MultiFile';
+        break;
       default:
         throw new Error("Persistor initialization: Invalid options.type (see readme)");
     }

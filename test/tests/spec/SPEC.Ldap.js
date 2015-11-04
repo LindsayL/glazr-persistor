@@ -542,114 +542,121 @@
       });
     });
 
-    //describe("#create(item, callback)", function () {
-    //  describe('readJson Error', function () {
-    //    beforeEach(function () {
-    //      sinon.stub(persistor, 'readJson', function (callback) {
-    //        callback(myError);
-    //      });
-    //      sinon.stub(persistor, 'writeJson', function (data, callback) {
-    //        throw new Error('should not get here');
-    //      });
-    //    });
-    //    it('should call the callback with the error', function (done) {
-    //      persistor.create(item, function (err, recordId) {
-    //        err.should.equal(myError);
-    //        should.not.exist(recordId);
-    //        done();
-    //      });
-    //    });
-    //  });
-    //  describe('writeJson Error', function () {
-    //    beforeEach(function () {
-    //      sinon.stub(persistor, 'readJson', function (callback) {
-    //        callback(null, resourceContents || []);
-    //      });
-    //      sinon.stub(persistor, 'writeJson', function (data, callback) {
-    //        callback(myError);
-    //      });
-    //    });
-    //    it('should call the callback with the error', function (done) {
-    //      persistor.create(item, function (err, recordId) {
-    //        err.should.equal(myError);
-    //        should.not.exist(recordId);
-    //        done();
-    //      });
-    //    });
-    //  });
-    //  describe("Resource does not exist/is empty", function () {
-    //    beforeEach(function () {
-    //      sinon.stub(persistor, 'readJson', function (callback) {
-    //        callback(null, resourceContents || []);
-    //      });
-    //      sinon.stub(persistor, 'writeJson', function (data, callback) {
-    //        resourceContents = data;
-    //        callback();
-    //      });
-    //    });
-    //    it('should call the callback with the new id', function (done) {
-    //      persistor.create(item, function (err, recordId) {
-    //        should.not.exist(err);
-    //        should.exist(recordId);
-    //        done();
-    //      });
-    //    });
-    //    it('should add the record to the resource', function (done) {
-    //      persistor.create(item, function (err, recordId) {
-    //        should.not.exist(err);
-    //        should.exist(recordId);
-    //        persistor.get(recordId, function (err, record) {
-    //          should.not.exist(err);
-    //          record.id.should.equal(recordId);
-    //          record.param.should.equal(item.param);
-    //          done();
-    //        });
-    //      });
-    //    });
-    //  });
-    //  describe("resource exists and has content", function () {
-    //    beforeEach(function (done) {
-    //      sinon.stub(persistor, 'readJson', function (callback) {
-    //        callback(null, resourceContents || []);
-    //      });
-    //      sinon.stub(persistor, 'writeJson', function (data, callback) {
-    //        resourceContents = data;
-    //        callback();
-    //      });
-    //      persistor.create(item, function (err, recordId) {
-    //        should.not.exist(err);
-    //        should.exist(recordId);
-    //        id = recordId;
-    //        done();
-    //      });
-    //    });
-    //    it('should append new record to the resource with unique id', function (done) {
-    //      var
-    //        item2 = {param: 'blah2'};
-    //
-    //      // Call create
-    //      persistor.create(item2, function (err, recordId) {
-    //        should.not.exist(err);
-    //        should.exist(recordId);
-    //
-    //        // Check that the first entry is still good
-    //        persistor.get(id, function (err, record) {
-    //          should.not.exist(err);
-    //          record.id.should.equal(id);
-    //          record.param.should.equal(item.param);
-    //
-    //          // Check new entry
-    //          persistor.get(recordId, function (err, record) {
-    //            should.not.exist(err);
-    //            record.id.should.equal(recordId);
-    //            record.param.should.equal(item2.param);
-    //            done();
-    //          });
-    //        });
-    //      });
-    //    });
-    //  });
-    //});
+    describe.only("#create(item, callback)", function () {
+      var
+        myId = 'blah';
+      beforeEach(function () {
+        sinon.stub(persistor, 'getNewDn', function () {
+          return myId;
+        });
+      });
+      describe('search Error', function () {
+        beforeEach(function () {
+          sinon.stub(persistor, 'search', function (dn, scope, callback) {
+            callback(myError);
+          });
+          sinon.stub(persistor, 'add', function (dn, record, callback) {
+            throw new Error('should not get here');
+          });
+        });
+        it('should call the callback with the error', function (done) {
+          persistor.create(item, function (err, recordId) {
+            err.should.equal(myError);
+            should.not.exist(recordId);
+            done();
+          });
+        });
+      });
+      describe('writeJson Error', function () {
+        beforeEach(function () {
+          sinon.stub(persistor, 'readJson', function (callback) {
+            callback(null, resourceContents || []);
+          });
+          sinon.stub(persistor, 'writeJson', function (data, callback) {
+            callback(myError);
+          });
+        });
+        it('should call the callback with the error', function (done) {
+          persistor.create(item, function (err, recordId) {
+            err.should.equal(myError);
+            should.not.exist(recordId);
+            done();
+          });
+        });
+      });
+      describe("Resource does not exist/is empty", function () {
+        beforeEach(function () {
+          sinon.stub(persistor, 'readJson', function (callback) {
+            callback(null, resourceContents || []);
+          });
+          sinon.stub(persistor, 'writeJson', function (data, callback) {
+            resourceContents = data;
+            callback();
+          });
+        });
+        it('should call the callback with the new id', function (done) {
+          persistor.create(item, function (err, recordId) {
+            should.not.exist(err);
+            should.exist(recordId);
+            done();
+          });
+        });
+        it('should add the record to the resource', function (done) {
+          persistor.create(item, function (err, recordId) {
+            should.not.exist(err);
+            should.exist(recordId);
+            persistor.get(recordId, function (err, record) {
+              should.not.exist(err);
+              record.id.should.equal(recordId);
+              record.param.should.equal(item.param);
+              done();
+            });
+          });
+        });
+      });
+      describe("resource exists and has content", function () {
+        beforeEach(function (done) {
+          sinon.stub(persistor, 'readJson', function (callback) {
+            callback(null, resourceContents || []);
+          });
+          sinon.stub(persistor, 'writeJson', function (data, callback) {
+            resourceContents = data;
+            callback();
+          });
+          persistor.create(item, function (err, recordId) {
+            should.not.exist(err);
+            should.exist(recordId);
+            id = recordId;
+            done();
+          });
+        });
+        it('should append new record to the resource with unique id', function (done) {
+          var
+            item2 = {param: 'blah2'};
+
+          // Call create
+          persistor.create(item2, function (err, recordId) {
+            should.not.exist(err);
+            should.exist(recordId);
+
+            // Check that the first entry is still good
+            persistor.get(id, function (err, record) {
+              should.not.exist(err);
+              record.id.should.equal(id);
+              record.param.should.equal(item.param);
+
+              // Check new entry
+              persistor.get(recordId, function (err, record) {
+                should.not.exist(err);
+                record.id.should.equal(recordId);
+                record.param.should.equal(item2.param);
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
 
     describe('#get(id, callback)', function () {
 

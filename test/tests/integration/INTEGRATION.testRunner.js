@@ -120,6 +120,43 @@
       testSuite(persistor, removeResourceFn, testObjects, testParam);
     });
 
+    describe.only('MultiFile', function () {
+
+      // Init persistor
+      var
+        fse = require('fs-extra'),
+        fileDir = 'someTempDir',
+        filePath = path.resolve(fileDir);
+      options = {
+        type: 'MultiFile',
+        config: {
+          dir: filePath
+        }
+      };
+      persistor = new Persistor(options);
+
+      // Create removeResourceFn
+      removeResourceFn = function (done) {
+        fse.remove(fileDir, function (err) {
+          should.not.exist(err);
+          done();
+        });
+      };
+
+      testParam = 'param';
+      testObjects = [];
+      temp = {};
+      temp[testParam] = 'blah1';
+      testObjects.push(temp);
+      temp[testParam] = 'blah2';
+      testObjects.push(temp);
+      temp[testParam] = 'blah3';
+      testObjects.push(temp);
+      temp[testParam] = 'blah4';
+      testObjects.push(temp);
+
+      testSuite(persistor, removeResourceFn, testObjects, testParam);
+    });
   });
 
 }());
