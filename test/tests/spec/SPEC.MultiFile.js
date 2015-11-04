@@ -8,9 +8,9 @@
 
   var
     should = require('should'),
-    Persistor = require('../../../adapters/LocalFile.js');
+    Persistor = require('../../../adapters/MultiFile.js');
 
-  describe("SPEC.LocalFile", function () {
+  describe("SPEC.MultiFile", function () {
 
     var
       fse = require('fs-extra'),
