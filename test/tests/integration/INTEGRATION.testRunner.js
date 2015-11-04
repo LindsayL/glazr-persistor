@@ -10,13 +10,10 @@
     utils = require('glazr-utils'),
     testSuite = require('./INTEGRATION.tests'),
     Persistor = require(path.resolve("./Interface.js")),
-    persistor,
     testParam,
     testObjects,
     temp,
-    options,
-    config,
-    removeResourceFn;
+    config;
 
   describe("INTEGRATION", function () {
     try {
@@ -34,14 +31,15 @@
         fse = require('fs-extra'),
         fileDir = 'someTempDir',
         fileName = 'tempLocalFileForTest.json',
-        filePath = path.resolve(path.join(fileDir, fileName));
-      options = {
-        type: 'LocalFile',
-        config: {
-          filePath: filePath
-        }
-      };
-      persistor = new Persistor(options);
+        filePath = path.resolve(path.join(fileDir, fileName)),
+        options = {
+          type: 'LocalFile',
+          config: {
+            filePath: filePath
+          }
+        },
+        persistor = new Persistor(options),
+        removeResourceFn;
 
       // Create removeResourceFn
       removeResourceFn = function (done) {
@@ -67,13 +65,14 @@
     });
 
     describe('Ldap', function () {
-      options = {
-        type: 'Ldap',
-        config: config.Ldap
-      };
-
       // Init persistor
-      persistor = new Persistor(options);
+      var
+        options = {
+          type: 'Ldap',
+          config: config.Ldap
+        },
+        persistor = new Persistor(options),
+        removeResourceFn;
 
       // Create removeResourceFn
       removeResourceFn = function (done) {
@@ -126,14 +125,15 @@
       var
         fse = require('fs-extra'),
         fileDir = 'someTempDir',
-        filePath = path.resolve(fileDir);
-      options = {
-        type: 'MultiFile',
-        config: {
-          dir: filePath
-        }
-      };
-      persistor = new Persistor(options);
+        filePath = path.resolve(fileDir),
+        options = {
+          type: 'MultiFile',
+          config: {
+            dir: filePath
+          }
+        },
+        persistor = new Persistor(options),
+        removeResourceFn;
 
       // Create removeResourceFn
       removeResourceFn = function (done) {
