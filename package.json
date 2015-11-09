@@ -1,7 +1,7 @@
 {
   "name": "glazr-persistor",
-  "version": "0.0.6",
-  "description": "javascript persistor which supports localFile persistence.",
+  "version": "0.0.7",
+  "description": "javascript persistor which supports localFile, Multifile, and Ldap persistence.",
   "main": "interface.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

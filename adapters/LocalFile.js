@@ -13,6 +13,7 @@
    * @constructor
    */
   LocalPersistor = function (options) {
+    this.type = 'LocalFile';
     if (!options.filePath) {
       throw new Error('Persistor initialization: type="LocalFile", '
       + 'No filePath specified in options.config (see readme).');
