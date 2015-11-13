@@ -63,7 +63,6 @@
     fse.readJson(self.dir + '/' + id + '.json', function (err, contents) {
       if (err) {
         if (err.code === 'ENOENT') {
-          err = new Error();
           err.code = self.notFoundError;
         }
         return callback(err);
