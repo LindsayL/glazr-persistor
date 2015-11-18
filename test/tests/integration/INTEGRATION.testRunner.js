@@ -39,14 +39,18 @@
           }
         },
         persistor = new Persistor(options),
-        removeResourceFn;
+        refreshResourceFn;
 
       // Create removeResourceFn
-      removeResourceFn = function (done) {
-        fse.remove(fileDir, function (err) {
-          should.not.exist(err);
+      refreshResourceFn = function (done) {
+        if (fse.existsSync(fileDir)) {
+          fse.remove(fileDir, function (err) {
+            should.not.exist(err);
+            done();
+          });
+        } else {
           done();
-        });
+        }
       };
 
       testParam = 'param';
@@ -61,7 +65,7 @@
       temp[testParam] = 'blah4';
       testObjects.push(temp);
 
-      testSuite(persistor, removeResourceFn, testObjects, testParam);
+      testSuite(persistor, refreshResourceFn, refreshResourceFn, testObjects, testParam);
     });
 
     describe('Ldap', function () {
@@ -72,35 +76,61 @@
           config: config.Ldap
         },
         persistor = new Persistor(options),
+        refreshResourceFn,
         removeResourceFn;
 
       // Create removeResourceFn
       removeResourceFn = function (done) {
-        var
-          mutexName = 'ldapModMutex',
-          barrier;
-
-        persistor.getAll(function (err, records) {
+        persistor.adapter.search(options.config.searchBase, 'sub', function (err, records) {
           if (err) {
+            if (err.code === 404) {
+              return done();
+            }
             should.not.exist(err);
             return done();
           }
-          barrier = utils.syncBarrier(records.length, function (err) {
+
+          var remove = function (records, callback, startLength) {
+            if (startLength === undefined) {
+              startLength = records.length;
+            }
+            var
+              record = records[0];
+            persistor.remove(record.id, function (err) {
+              if (err) {
+                record.removeAttemps = record.removeAttemps + 1 || 1;
+                if (record.removeAttemps > startLength) {
+                  callback('Failed to remove entries while refreshing ldap resource.');
+                }
+                // Else move the record to the end
+                records.push(record);
+              }
+              // remove the record from the front of the queue
+              records.splice(0, 1);
+
+              if (records.length > 0) {
+                remove(records, callback, startLength);
+              } else {
+                callback();
+              }
+            });
+          };
+
+          remove(records, function (err) {
             should.not.exist(err);
             done();
           });
-          utils.forEach(records, function (index, record) {
-            if (record.id !== options.config.searchBase) {
-              utils.getMutex(mutexName, function (releaseMutex) {
-                persistor.remove(record.id, function (err) {
-                  releaseMutex();
-                  barrier(err);
-                });
-              })
-            } else {
-              barrier();
-            }
-          })
+
+        }, '(objectclass=*)');
+      };
+
+      // Create refreshResourceFn
+      refreshResourceFn = function (done) {
+        removeResourceFn(function () {
+          persistor.adapter.add(options.config.searchBase, {objectClass: 'organizationalUnit'}, function (err) {
+            should.not.exist(err);
+            done();
+          });
         });
       };
 
@@ -116,7 +146,7 @@
       temp[testParam] = ['cn=blah4', 'cn=blahblah4'];
       testObjects.push(temp);
 
-      testSuite(persistor, removeResourceFn, testObjects, testParam);
+      testSuite(persistor, refreshResourceFn, removeResourceFn, testObjects, testParam);
     });
 
     describe('MultiFile', function () {
@@ -133,10 +163,10 @@
           }
         },
         persistor = new Persistor(options),
-        removeResourceFn;
+        refreshResourceFn;
 
       // Create removeResourceFn
-      removeResourceFn = function (done) {
+      refreshResourceFn = function (done) {
         fse.remove(fileDir, function (err) {
           should.not.exist(err);
           done();
@@ -155,7 +185,7 @@
       temp[testParam] = 'blah4';
       testObjects.push(temp);
 
-      testSuite(persistor, removeResourceFn, testObjects, testParam);
+      testSuite(persistor, refreshResourceFn, refreshResourceFn, testObjects, testParam);
     });
   });
 

@@ -1,6 +1,6 @@
 {
   "name": "glazr-persistor",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "javascript persistor which supports localFile, Multifile, and Ldap persistence.",
   "main": "interface.js",
   "scripts": {

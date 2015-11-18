@@ -707,6 +707,9 @@
           sinon.stub(persistor, 'search', function (dn, scope, callback) {
             callback(myError);
           });
+          sinon.stub(persistor, 'errorParser', function (error) {
+            return error;
+          });
         });
         it('should call the callback with the error', function (done) {
           persistor.getAll(function (err, records) {
@@ -716,10 +719,25 @@
           });
         });
       });
-      describe('search no entries found', function () {
+      describe('resource does not exist', function () {
         beforeEach(function () {
           sinon.stub(persistor, 'search', function (dn, scope, callback) {
             callback({name: 'NoSuchObjectError'});
+          });
+        });
+        it('should return an empty array', function (done) {
+          persistor.getAll(function (err, records) {
+            should.exist(err);
+            err.code.should.equal(NOT_FOUND_CODE);
+            should.not.exist(records);
+            done();
+          });
+        });
+      });
+      describe('resource is empty', function () {
+        beforeEach(function () {
+          sinon.stub(persistor, 'search', function (dn, scope, callback) {
+            callback(null, []);
           });
         });
         it('should return an empty array', function (done) {

@@ -28,7 +28,11 @@
 
     self.readJson(function (err, records) {
       if (err) {
-        return callback(err);
+        if (err.code === self.notFoundError) {
+          records = [];
+        } else {
+          return callback(err);
+        }
       }
 
       var
@@ -191,9 +195,11 @@
     var
       self = this;
     fse.readJson(self.filePath, function (err, data) {
-      // If it doesn't exist just give an empty object
+      // If it doesn't exist give appropriate error
       if (err && err.code === 'ENOENT') {
-        return callback(null, []);
+        err.code = self.notFoundError;
+        err.message = 'LocalFilePersistor: Could not find "' + self.filePath + '".';
+        return callback(err);
       }
       // Else return the err (if success err == null)
       return callback(err, data);

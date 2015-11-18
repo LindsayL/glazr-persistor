@@ -5,7 +5,7 @@
   'use strict';
 
 
-  module.exports = function (persistor, removeResourceFn, testObjects, testParam) {
+  module.exports = function (persistor, refreshResourceFn, removeResourceFn, testObjects, testParam) {
     var
       should = require('should'),
       utils = require('glazr-utils'),
@@ -18,10 +18,10 @@
       updatedItem = testObjects[3];
 
     beforeEach(function (done) {
-      removeResourceFn(done);
+      refreshResourceFn(done);
     });
     after(function (done) {
-      removeResourceFn(done);
+      refreshResourceFn(done);
     });
 
     describe("#create(item1, callback)", function () {
@@ -192,11 +192,13 @@
     describe('#getAll(id, callback)', function () {
 
       describe("resource does not exist", function () {
-        it('should return an empty array', function (done) {
-          persistor.getAll(function (err, records) {
-            should.not.exist(err);
-            Object.prototype.toString.call(records).should.equal('[object Array]');
-            records.length.should.equal(0);
+        beforeEach(function (done) {
+          removeResourceFn(done);
+        });
+        it('should return a not found error', function (done) {
+          persistor.getAll(function (err) {
+            should.exist(err);
+            err.code.should.equal(NOT_FOUND_CODE);
             done();
           });
         });
