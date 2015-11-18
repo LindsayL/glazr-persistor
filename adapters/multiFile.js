@@ -64,6 +64,7 @@
       if (err) {
         if (err.code === 'ENOENT') {
           err.code = self.notFoundError;
+          err.message = 'Failed to find ' + self.dir + '/' + id + '.json';
         }
         return callback(err);
       }
@@ -92,8 +93,9 @@
           });
         });
       } else {
-        if (err.code === 'ENOENT') {
-          return callback(null, records);
+        if (err && err.code === 'ENOENT') {
+          err.code = self.notFoundError;
+          err.message = err.message = 'Failed to find ' + self.dir;
         }
         callback(err, records);
       }

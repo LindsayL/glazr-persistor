@@ -154,9 +154,7 @@
 
     self.search(self.searchBase, 'sub', function (err, results) {
       if (err) {
-        if (err.name === 'NoSuchObjectError') {
-          return callback(null, []);
-        }
+        err = self.errorParser(err);
         return callback(err);
       }
 
@@ -241,7 +239,7 @@
    *  base: Look for the dn exactly.
    *  sub: Look at every sub-entry.
    *  one: Look only at direct sub-entries.
-   * @param callback
+   * @param {function(err, res)} callback
    * @param filter - defaults to '(objectclass=' + this.entryObjectClass + ')'.
    */
   LdapPersistor.prototype.search = function (dn, scope, callback, filter) {

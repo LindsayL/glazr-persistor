@@ -62,13 +62,13 @@
     });
 
     describe('#readJson(callback)', function () {
-      it('should return [] if file does not exist', function (done) {
+      it('should return error if file does not exist', function (done) {
         sinon.stub(fse, 'readJson', function (file, callback) {
           callback({code: 'ENOENT'});
         });
-        persistor.readJson(function (err, data) {
-          should.not.exist(err);
-          JSON.stringify(data).should.equal(JSON.stringify([]));
+        persistor.readJson(function (err) {
+          should.exist(err);
+          err.code.should.equal(NOT_FOUND_CODE);
           done();
         });
       });
