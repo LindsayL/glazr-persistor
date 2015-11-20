@@ -46,6 +46,9 @@
       case 'MultiFile':
         persPath = 'MultiFile';
         break;
+      case 'Yaml':
+        persPath = 'Yaml';
+        break;
       default:
         throw new Error("Persistor initialization: Invalid options.type (see readme)");
     }

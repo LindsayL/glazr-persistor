@@ -1,7 +1,7 @@
 {
   "name": "glazr-persistor",
-  "version": "0.0.8",
-  "description": "javascript persistor which supports localFile, Multifile, and Ldap persistence.",
+  "version": "0.0.9",
+  "description": "javascript persistor which supports localFile, Multifile, Ldap, Yaml(SingleFile) persistence.",
   "main": "interface.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -16,6 +16,7 @@
     "glazr-utils": "Glazr/glazr-utils",
     "ldapjs": "^0.7.1",
     "fs-extra": "^0.23.1",
+    "js-yaml": "3.4.3",
     "path": "^0.11.14"
   },
   "devDependencies": {

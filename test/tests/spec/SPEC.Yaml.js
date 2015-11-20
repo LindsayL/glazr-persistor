@@ -1,4 +1,4 @@
-/*jslint node: true*/
+/*jslint node:true*/
 /*globals describe, it, before, beforeEach, after, afterEach, vars, path, fse, sinon*/
 
 (function () {
@@ -8,13 +8,14 @@
 
   var
     should = require('should'),
-    Persistor = require('../../../adapters/LocalFile.js');
+    Persistor = require('../../../adapters/Yaml.js');
 
-  describe("SPEC.LocalFile", function () {
+  describe("SPEC.Yaml", function () {
 
     var
       fse = require('fs-extra'),
-      filePath = path.resolve('someTempDir/someTempFile.json'),
+      yaml = require('js-yaml'),
+      filePath = path.resolve('someTempDir/someTempFile.yaml'),
       NOT_FOUND_CODE = 404,
       SERVER_ERROR_CODE = 500,
       id,
@@ -62,55 +63,54 @@
       });
     });
 
-    describe('#readJson(callback)', function () {
+    describe('#readYaml(callback)', function () {
       it('should return error if file does not exist', function (done) {
-        sinon.stub(fse, 'readJson', function (file, callback) {
+        sinon.stub(fse, 'readFile', function (file, callback) {
           /*jslint unparam: true*/
           callback({code: 'ENOENT'});
         });
-        persistor.readJson(function (err) {
+        persistor.readYaml(function (err) {
           should.exist(err);
           err.code.should.equal(NOT_FOUND_CODE);
           done();
         });
       });
-      it('should return file contents if file exists and is valid', function (done) {
-        sinon.stub(fse, 'readJson', function (file, callback) {
-          /*jslint unparam: true*/
-          callback(null, item);
+      it('should return an error if the file contents are invalid', function (done) {
+        sinon.stub(fse, 'readFile', function (file, callback) {
+          /*jslint unparam:true*/
+          callback(null, '');
         });
-        persistor.readJson(function (err, data) {
-          should.not.exist(err);
-          JSON.stringify(data).should.equal(JSON.stringify(item));
+        sinon.stub(yaml, 'safeLoad', function (data) {
+          /*jslint unparam:true*/
+          throw new Error(myError);
+        });
+        persistor.readYaml(function (err, data) {
+          should.exist(err);
+          err.code.should.equal(SERVER_ERROR_CODE);
+          should.not.exist(data);
           done();
         });
       });
-      it('should return an error if the file contents are invalid', function (done) {
-        sinon.stub(fse, 'readJson', function (file, callback) {
+      it('should return file contents if file exists and is valid', function (done) {
+        sinon.stub(fse, 'readFile', function (file, callback) {
           /*jslint unparam: true*/
-          try {
-            JSON.parse('some bad json');
-          } catch (e) {
-            callback(e);
-          }
+          callback(null, item);
         });
-        persistor.readJson(function (err, data) {
-          should.exist(err);
-          err.code.should.equal(SERVER_ERROR_CODE);
-          err.name.should.equal('SyntaxError');
-          should.not.exist(data);
+        persistor.readYaml(function (err, data) {
+          should.not.exist(err);
+          JSON.stringify(data).should.equal(JSON.stringify(yaml.safeLoad(item)));
           done();
         });
       });
     });
 
-    describe('#writeJson(data, callback)', function () {
+    describe('#writeYaml(data, callback)', function () {
       it('should call the callback with no err if success', function (done) {
-        sinon.stub(fse, 'writeJson', function (filePath, data, callback) {
+        sinon.stub(fse, 'writeFile', function (dirPath, data, callback) {
           /*jslint unparam: true*/
           callback();
         });
-        persistor.writeJson(item, function (err) {
+        persistor.writeYaml(item, function (err) {
           should.not.exist(err);
           done();
         });
@@ -118,43 +118,54 @@
       describe('filePath does not exist', function () {
         beforeEach(function () {
           // Fake file not existing
-          sinon.stub(fse, 'writeJson', function (file, data, callback) {
+          sinon.stub(fse, 'writeFile', function (file, data, callback) {
             /*jslint unparam: true*/
             callback({code: 'ENOENT'});
           });
         });
         it('should call and pass out any errors from mkdirs', function (done) {
-          sinon.stub(fse, 'mkdirs', function (filePath, callback) {
+          sinon.stub(yaml, 'safeDump', function (data) {
+            /*jslint unparam: true*/
+            throw new Error(myError);
+          });
+          persistor.writeYaml(item, function (err) {
+            should.exist(err);
+            err.code.should.equal(SERVER_ERROR_CODE);
+            done();
+          });
+        });
+        it('should call and pass out any errors from mkdirs', function (done) {
+          sinon.stub(fse, 'mkdirs', function (dirPath, callback) {
             /*jslint unparam: true*/
             callback(myError);
           });
-          persistor.writeJson(item, function (err) {
+          persistor.writeYaml(item, function (err) {
             err.should.equal(myError);
             done();
           });
         });
-        it('should call and pass out any errors from writeJson again if no errors from mkdirs', function (done) {
-          sinon.stub(fse, 'mkdirs', function (filePath, callback) {
+        it('should call and pass out any errors from writeYaml again if no errors from mkdirs', function (done) {
+          sinon.stub(fse, 'mkdirs', function (dirPath, callback) {
             /*jslint unparam: true*/
             callback();
           });
-          persistor.writeJson(item, function (err) {
+          persistor.writeYaml(item, function (err) {
             err.code.should.equal('ENOENT');
             done();
           });
         });
       });
-      it('should call and pass out any non-ENOENT errors from writeJson', function (done) {
-        sinon.stub(fse, 'writeJson', function (file, data, callback) {
+      it('should call and pass out any non-ENOENT errors from writeFile', function (done) {
+        sinon.stub(fse, 'writeFile', function (file, data, callback) {
           /*jslint unparam: true*/
-          callback({});
+          callback(myError);
         });
-        sinon.stub(fse, 'mkdirs', function (filePath, callback) {
+        sinon.stub(fse, 'mkdirs', function (dirPath, callback) {
           /*jslint unparam: true*/
           callback('better not be this error');
         });
-        persistor.writeJson(item, function (err) {
-          err.code.should.equal(SERVER_ERROR_CODE);
+        persistor.writeYaml(item, function (err) {
+          err.should.equal(myError);
           done();
         });
       });
@@ -162,12 +173,12 @@
 
     describe("#create(item, callback)", function () {
 
-      describe('readJson Error', function () {
+      describe('readYaml Error', function () {
         beforeEach(function () {
-          sinon.stub(persistor, 'readJson', function (callback) {
+          sinon.stub(persistor, 'readYaml', function (callback) {
             callback(myError);
           });
-          sinon.stub(persistor, 'writeJson', function (data, callback) {
+          sinon.stub(persistor, 'writeYaml', function (data, callback) {
             /*jslint unparam: true*/
             throw new Error('should not get here');
           });
@@ -180,12 +191,12 @@
           });
         });
       });
-      describe('writeJson Error', function () {
+      describe('writeYaml Error', function () {
         beforeEach(function () {
-          sinon.stub(persistor, 'readJson', function (callback) {
+          sinon.stub(persistor, 'readYaml', function (callback) {
             callback(null, resourceContents || []);
           });
-          sinon.stub(persistor, 'writeJson', function (data, callback) {
+          sinon.stub(persistor, 'writeYaml', function (data, callback) {
             /*jslint unparam: true*/
             callback(myError);
           });
@@ -200,10 +211,10 @@
       });
       describe("Resource does not exist/is empty", function () {
         beforeEach(function () {
-          sinon.stub(persistor, 'readJson', function (callback) {
+          sinon.stub(persistor, 'readYaml', function (callback) {
             callback(null, resourceContents || []);
           });
-          sinon.stub(persistor, 'writeJson', function (data, callback) {
+          sinon.stub(persistor, 'writeYaml', function (data, callback) {
             resourceContents = data;
             callback();
           });
@@ -230,10 +241,10 @@
       });
       describe("resource exists and has content", function () {
         beforeEach(function (done) {
-          sinon.stub(persistor, 'readJson', function (callback) {
+          sinon.stub(persistor, 'readYaml', function (callback) {
             callback(null, resourceContents || []);
           });
-          sinon.stub(persistor, 'writeJson', function (data, callback) {
+          sinon.stub(persistor, 'writeYaml', function (data, callback) {
             resourceContents = data;
             callback();
           });
@@ -275,9 +286,9 @@
 
     describe('#get(id, callback)', function () {
 
-      describe('readJson Error', function () {
+      describe('readYaml Error', function () {
         beforeEach(function () {
-          sinon.stub(persistor, 'readJson', function (callback) {
+          sinon.stub(persistor, 'readYaml', function (callback) {
             callback(myError);
           });
         });
@@ -291,7 +302,7 @@
       });
       describe("resource does not exist/is empty", function () {
         beforeEach(function () {
-          sinon.stub(persistor, 'readJson', function (callback) {
+          sinon.stub(persistor, 'readYaml', function (callback) {
             callback(null, {});
           });
         });
@@ -313,10 +324,10 @@
           item2 = {param: 'blah2'},
           item3 = {param: 'blah3'};
         beforeEach(function (done) {
-          sinon.stub(persistor, 'readJson', function (callback) {
+          sinon.stub(persistor, 'readYaml', function (callback) {
             callback(null, resourceContents || []);
           });
-          sinon.stub(persistor, 'writeJson', function (data, callback) {
+          sinon.stub(persistor, 'writeYaml', function (data, callback) {
             resourceContents = data;
             callback();
           });
@@ -382,9 +393,9 @@
     });
 
     describe('#getAll(id, callback)', function () {
-      describe('readJson Error', function () {
+      describe('readYaml Error', function () {
         beforeEach(function () {
-          sinon.stub(persistor, 'readJson', function (callback) {
+          sinon.stub(persistor, 'readYaml', function (callback) {
             callback(myError);
           });
         });
@@ -398,7 +409,7 @@
       });
       describe("resource does not exist/is empty", function () {
         beforeEach(function () {
-          sinon.stub(persistor, 'readJson', function (callback) {
+          sinon.stub(persistor, 'readYaml', function (callback) {
             callback(null, resourceContents || []);
           });
         });
@@ -420,10 +431,10 @@
           item2 = {param: 'blah2'},
           item3 = {param: 'blah3'};
         beforeEach(function (done) {
-          sinon.stub(persistor, 'readJson', function (callback) {
+          sinon.stub(persistor, 'readYaml', function (callback) {
             callback(null, resourceContents || []);
           });
-          sinon.stub(persistor, 'writeJson', function (data, callback) {
+          sinon.stub(persistor, 'writeYaml', function (data, callback) {
             resourceContents = data;
             callback();
           });
@@ -463,12 +474,12 @@
 
     describe('#update(id, record, callback)', function () {
       var myId = 123;
-      describe('readJson Error', function () {
+      describe('readYaml Error', function () {
         beforeEach(function () {
-          sinon.stub(persistor, 'readJson', function (callback) {
+          sinon.stub(persistor, 'readYaml', function (callback) {
             callback(myError);
           });
-          sinon.stub(persistor, 'writeJson', function (data, callback) {
+          sinon.stub(persistor, 'writeYaml', function (data, callback) {
             /*jslint unparam: true*/
             throw new Error('should not get here');
           });
@@ -481,13 +492,13 @@
           });
         });
       });
-      describe('writeJson Error', function () {
+      describe('writeYaml Error', function () {
         beforeEach(function () {
-          sinon.stub(persistor, 'readJson', function (callback) {
+          sinon.stub(persistor, 'readYaml', function (callback) {
             resourceContents = [{id: myId}];
             callback(null, resourceContents);
           });
-          sinon.stub(persistor, 'writeJson', function (data, callback) {
+          sinon.stub(persistor, 'writeYaml', function (data, callback) {
             /*jslint unparam: true*/
             callback(myError);
           });
@@ -502,10 +513,10 @@
       });
       describe("resource does not exist/is empty", function () {
         beforeEach(function () {
-          sinon.stub(persistor, 'readJson', function (callback) {
+          sinon.stub(persistor, 'readYaml', function (callback) {
             callback(null, resourceContents || []);
           });
-          sinon.stub(persistor, 'writeJson', function (data, callback) {
+          sinon.stub(persistor, 'writeYaml', function (data, callback) {
             resourceContents = data;
             callback();
           });
@@ -539,10 +550,10 @@
           item3 = {param: 'blah3'},
           updatedItem = {param: 'newBlah'};
         beforeEach(function (done) {
-          sinon.stub(persistor, 'readJson', function (callback) {
+          sinon.stub(persistor, 'readYaml', function (callback) {
             callback(null, resourceContents || []);
           });
-          sinon.stub(persistor, 'writeJson', function (data, callback) {
+          sinon.stub(persistor, 'writeYaml', function (data, callback) {
             resourceContents = data;
             callback();
           });
@@ -622,12 +633,12 @@
 
     describe('#remove(id, callback)', function () {
       var myId = 123;
-      describe('readJson Error', function () {
+      describe('readYaml Error', function () {
         beforeEach(function () {
-          sinon.stub(persistor, 'readJson', function (callback) {
+          sinon.stub(persistor, 'readYaml', function (callback) {
             callback(myError);
           });
-          sinon.stub(persistor, 'writeJson', function (data, callback) {
+          sinon.stub(persistor, 'writeYaml', function (data, callback) {
             /*jslint unparam: true*/
             throw new Error('should not get here');
           });
@@ -639,13 +650,13 @@
           });
         });
       });
-      describe('writeJson Error', function () {
+      describe('writeYaml Error', function () {
         beforeEach(function () {
-          sinon.stub(persistor, 'readJson', function (callback) {
+          sinon.stub(persistor, 'readYaml', function (callback) {
             resourceContents = [{id: myId}];
             callback(null, resourceContents);
           });
-          sinon.stub(persistor, 'writeJson', function (data, callback) {
+          sinon.stub(persistor, 'writeYaml', function (data, callback) {
             /*jslint unparam: true*/
             callback(myError);
           });
@@ -659,10 +670,10 @@
       });
       describe("resource does not exist/is empty", function () {
         beforeEach(function () {
-          sinon.stub(persistor, 'readJson', function (callback) {
+          sinon.stub(persistor, 'readYaml', function (callback) {
             callback(null, resourceContents || []);
           });
-          sinon.stub(persistor, 'writeJson', function (data, callback) {
+          sinon.stub(persistor, 'writeYaml', function (data, callback) {
             resourceContents = data;
             callback();
           });
@@ -684,10 +695,10 @@
           item2 = {param: 'blah2'},
           item3 = {param: 'blah3'};
         beforeEach(function (done) {
-          sinon.stub(persistor, 'readJson', function (callback) {
+          sinon.stub(persistor, 'readYaml', function (callback) {
             callback(null, resourceContents || []);
           });
-          sinon.stub(persistor, 'writeJson', function (data, callback) {
+          sinon.stub(persistor, 'writeYaml', function (data, callback) {
             resourceContents = data;
             callback();
           });

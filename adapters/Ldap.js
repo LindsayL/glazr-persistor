@@ -1,4 +1,4 @@
-/*jslint node: true, nomen: true, unparam: true*/
+/*jslint node: true*/
 (function () {
   'use strict';
   var
@@ -338,7 +338,7 @@
       error = new Error();
     error.name = err.name;
     error.message = err.message;
-    error.code = err.code;
+    error.code = 500;
     error.stack = err.stack;
     if (err && (err.name === 'NoSuchObjectError' || err.name === 'InvalidDistinguishedNameError')) {
       error.code = 404;

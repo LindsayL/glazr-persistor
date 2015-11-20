@@ -1,4 +1,4 @@
-/*jslint node:true, unparam: true*/
+/*jslint node: true*/
 /*globals describe, it, before, beforeEach, after, afterEach, vars, path, fse*/
 
 (function () {

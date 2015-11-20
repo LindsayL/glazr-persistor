@@ -1,5 +1,5 @@
-/*jslint node:true, unparam: true*/
-/*globals describe, it, before, beforeEach, after, afterEach, vars, path, fse*/
+/*jslint node: true*/
+/*globals describe, it, before, beforeEach, after, afterEach, vars, path, fse, sinon*/
 
 (function () {
   'use strict';
@@ -16,6 +16,7 @@
       ldap = require('ldapjs'),
       NOT_FOUND_CODE = 404,
       CLIENT_ERROR_CODE = 400,
+      SERVER_ERROR_CODE = 500,
       id,
       item = {param: 'blah'},
       myError = 'MahSpecialError!',
@@ -25,7 +26,10 @@
     beforeEach(function () {
       sinon.stub(ldap, 'createClient', function () {
         return {
-          on: function (event, callback) {},
+          on: function (event, callback) {
+            /*jslint unparam: true*/
+            return undefined;
+          },
           search: {},
           del: {},
           bind: {},
@@ -111,6 +115,7 @@
     describe('#authenticate(callback)', function () {
       beforeEach(function () {
         sinon.stub(persistor.client, 'bind', function (user, pass, controls, callback) {
+          /*jslint unparam: true*/
           callback(myError);
         });
       });
@@ -130,6 +135,7 @@
       describe('search Error', function () {
         beforeEach(function () {
           sinon.stub(persistor.client, 'search', function (location, options, callback) {
+            /*jslint unparam: true*/
             callback(myError);
           });
         });
@@ -144,6 +150,7 @@
       describe('search on("searchReference")', function () {
         beforeEach(function () {
           sinon.stub(persistor.client, 'search', function (location, options, callback) {
+            /*jslint unparam: true*/
             var res = {
               on: function (event, callback) {
                 if (event === 'searchReference') {
@@ -165,6 +172,7 @@
       describe('search on("error")', function () {
         beforeEach(function () {
           sinon.stub(persistor.client, 'search', function (location, options, callback) {
+            /*jslint unparam: true*/
             var res = {
               on: function (event, callback) {
                 if (event === 'error') {
@@ -186,6 +194,7 @@
       describe('search on("end") with error', function () {
         beforeEach(function () {
           sinon.stub(persistor.client, 'search', function (location, options, callback) {
+            /*jslint unparam: true*/
             var res = {
               on: function (event, callback) {
                 if (event === 'end') {
@@ -198,6 +207,7 @@
         });
         it('should call the callback with the error', function (done) {
           persistor.search(persistor.searchBase, 'sub', function (err, records) {
+            /*jslint unparam: true*/
             err.should.equal(myError);
             done();
           });
@@ -206,6 +216,7 @@
       describe('search on("end") No entries found', function () {
         beforeEach(function () {
           sinon.stub(persistor.client, 'search', function (location, options, callback) {
+            /*jslint unparam: true*/
             var res = {
               on: function (event, callback) {
                 if (event === 'end') {
@@ -237,6 +248,7 @@
             return record;
           });
           sinon.stub(persistor.client, 'search', function (location, options, callback) {
+            /*jslint unparam: true*/
             var res = {
               on: function (event, callback) {
                 if (event === 'searchEntry') {
@@ -331,7 +343,7 @@
           };
         res = persistor.errorParser(myErr);
         res.constructor.name.should.equal('Error');
-        res.code.should.equal(myErr.code);
+        res.code.should.equal(SERVER_ERROR_CODE);
         res.name.should.equal(myErr.name);
         res.message.should.equal(myErr.message);
         res.stack.should.equal(myErr.stack);
@@ -494,11 +506,13 @@
             callback();
           });
           sinon.stub(persistor.client, 'add', function (dn, record, controls, callback) {
+            /*jslint unparam: true*/
             callback(myError);
           });
         });
         it('should return the error', function (done) {
           persistor.add('', {}, function (err, id) {
+            /*jslint unparam: true*/
             should.exist(err);
             err.should.equal(myError);
             done();
@@ -513,6 +527,7 @@
             callback();
           });
           sinon.stub(persistor.client, 'add', function (dn, record, controls, callback) {
+            /*jslint unparam: true*/
             callback();
           });
         });
@@ -538,7 +553,7 @@
               done();
             });
           });
-        })
+        });
       });
     });
 
@@ -663,6 +678,7 @@
       describe('search Error', function () {
         beforeEach(function () {
           sinon.stub(persistor, 'search', function (dn, scope, callback) {
+            /*jslint unparam: true*/
             callback(myError);
           });
         });
@@ -688,6 +704,7 @@
             {id: 3, param: 'blah3'}
           ];
           sinon.stub(persistor, 'search', function (dn, scope, callback) {
+            /*jslint unparam: true*/
             callback(null, [entries[1]]);
           });
         });
@@ -705,6 +722,7 @@
       describe('search Error', function () {
         beforeEach(function () {
           sinon.stub(persistor, 'search', function (dn, scope, callback) {
+            /*jslint unparam: true*/
             callback(myError);
           });
           sinon.stub(persistor, 'errorParser', function (error) {
@@ -722,6 +740,7 @@
       describe('resource does not exist', function () {
         beforeEach(function () {
           sinon.stub(persistor, 'search', function (dn, scope, callback) {
+            /*jslint unparam: true*/
             callback({name: 'NoSuchObjectError'});
           });
         });
@@ -737,6 +756,7 @@
       describe('resource is empty', function () {
         beforeEach(function () {
           sinon.stub(persistor, 'search', function (dn, scope, callback) {
+            /*jslint unparam: true*/
             callback(null, []);
           });
         });
@@ -758,6 +778,7 @@
           ];
         beforeEach(function () {
           sinon.stub(persistor, 'search', function (dn, scope, callback) {
+            /*jslint unparam: true*/
             callback(null, entries);
           });
         });
