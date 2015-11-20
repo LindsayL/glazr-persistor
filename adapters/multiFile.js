@@ -1,4 +1,4 @@
-/*jslint node: true, stupid: true*/
+/*jslint node: true*/
 /*globals */
 (function () {
   'use strict';
@@ -14,17 +14,34 @@
     this.type = 'MultiFile';
     if (!options.dir) {
       throw new Error('Persistor initialization: type="MultiFile", '
-      + 'No dir specified in options.config (see readme).');
+        + 'No dir specified in options.config (see readme).');
     }
     this.dir = options.dir;
     this.notFoundError = 404;
+    this.serverError = 500;
+    this.clientError = 400;
   };
 
   MultiFilePersistor.prototype.create = function (data, callback) {
     var
       self = this,
       id = 0,
-      i;
+      i,
+      createFn;
+
+    createFn = function (files, callback) {
+      for (i = 0; i < files.length; i += 1) {
+        id = Math.max(id, parseInt(files[i], 10));
+      }
+      id += 1;
+      data.id = id;
+      fse.writeJson(self.dir + '/' + id + '.json', data, function (err) {
+        if (err) {
+          err.status = self.clientError;
+        }
+        callback(err, id);
+      });
+    };
 
     if (typeof data === 'string') {
       try {
@@ -36,25 +53,22 @@
     }
 
     fse.readdir(self.dir, function (err, files) {
-
       if (err) {
         if (err.code === 'ENOENT') {
-          fse.mkdirSync(self.dir);
-          files = [];
+          fse.mkdir(self.dir, function (err) {
+            if (err) {
+              err.status = self.serverError;
+              return callback(err);
+            }
+            createFn([], callback);
+          });
         } else {
+          err.status = self.serverError;
           callback(err);
-          return;
         }
+      } else {
+        createFn(files, callback);
       }
-
-      for (i = 0; i < files.length; i += 1) {
-        id = Math.max(id, parseInt(files[i], 10));
-      }
-      id += 1;
-      data.id = id;
-      fse.writeJson(self.dir + '/' + id + '.json', data, function (err) {
-        callback(err, id);
-      });
     });
   };
 
@@ -63,7 +77,7 @@
     fse.readJson(self.dir + '/' + id + '.json', function (err, contents) {
       if (err) {
         if (err.code === 'ENOENT') {
-          err.code = self.notFoundError;
+          err.status = self.notFoundError;
           err.message = 'Failed to find ' + self.dir + '/' + id + '.json';
         }
         return callback(err);
@@ -81,9 +95,14 @@
       if (files) {
         var
           barrier = utils.syncBarrier(files.length, function (err) {
+            if (err && err.length) {
+              err[0].status = self.serverError;
+              return callback(err[0]);
+            }
             callback(err, records);
           });
         utils.forEach(files, function (index, file) {
+          /*jslint unparam: true*/
           fse.readJson(path.join(self.dir, file), function (err, record) {
             if (err) {
               return barrier(err);
@@ -93,9 +112,14 @@
           });
         });
       } else {
-        if (err && err.code === 'ENOENT') {
-          err.code = self.notFoundError;
-          err.message = err.message = 'Failed to find ' + self.dir;
+        if (err) {
+          if (err.code === 'ENOENT') {
+            err.status = self.notFoundError;
+            err.message = 'Failed to find ' + self.dir;
+          } else {
+            err.status = self.serverError;
+          }
+          return callback(err);
         }
         callback(err, records);
       }

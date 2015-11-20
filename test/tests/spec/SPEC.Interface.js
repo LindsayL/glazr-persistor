@@ -1,5 +1,5 @@
-/*jslint node:true, unparam: true*/
-/*globals describe, it, before, beforeEach, after, afterEach, vars, path, fse*/
+/*jslint node: true*/
+/*globals describe, it, before, beforeEach, after, afterEach, vars, path, fse, sinon*/
 
 (function () {
   'use strict';
@@ -55,7 +55,10 @@
       var
         myId = 1,
         myItem = {id: 2, param: 'blah'},
-        myCallback = function (err) {};
+        myCallback = function (err) {
+          /*jslint unparam: true*/
+          return undefined;
+        };
 
       beforeEach(function () {
         // Init the persistor with some valid options, but will override
@@ -107,7 +110,7 @@
         it('should throw an error if no id in reocrd', function (done) {
           persistor.update({param: 'blah'}, function (err) {
             should.exist(err);
-            err.code.should.equal(NO_ID_CODE);
+            err.status.should.equal(NO_ID_CODE);
             done();
           });
         });

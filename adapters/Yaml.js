@@ -4,7 +4,8 @@
   var
     fse = require('fs-extra'),
     path = require('path'),
-    LocalPersistor;
+    yaml = require('js-yaml'),
+    YamlPersistor;
 
 
   /**
@@ -12,10 +13,10 @@
    *  options.filePath - File path to where the data will be stored.
    * @constructor
    */
-  LocalPersistor = function (options) {
-    this.type = 'LocalFile';
+  YamlPersistor = function (options) {
+    this.type = 'Yaml';
     if (!options.filePath) {
-      throw new Error('Persistor initialization: type="LocalFile", '
+      throw new Error('Persistor initialization: type="Yaml", '
         + 'No filePath specified in options.config (see readme).');
     }
     this.filePath = options.filePath;
@@ -24,11 +25,11 @@
     this.clientError = 400;
   };
 
-  LocalPersistor.prototype.create = function (record, callback) {
+  YamlPersistor.prototype.create = function (record, callback) {
     var
       self = this;
 
-    self.readJson(function (err, records) {
+    self.readYaml(function (err, records) {
       if (err) {
         if (err.status === self.notFoundError) {
           records = [];
@@ -46,7 +47,7 @@
 
       // Add the new record and write it out
       records.push(record);
-      self.writeJson(records, function (err) {
+      self.writeYaml(records, function (err) {
         if (err) {
           callback(err);
         } else {
@@ -56,11 +57,11 @@
     });
   };
 
-  LocalPersistor.prototype.get = function (id, callback) {
+  YamlPersistor.prototype.get = function (id, callback) {
     var
       self = this;
 
-    self.readJson(function (err, records) {
+    self.readYaml(function (err, records) {
       if (err) {
         return callback(err);
       }
@@ -91,15 +92,15 @@
     });
   };
 
-  LocalPersistor.prototype.getAll = function (callback) {
-    this.readJson(callback);
+  YamlPersistor.prototype.getAll = function (callback) {
+    this.readYaml(callback);
   };
 
-  LocalPersistor.prototype.update = function (updatedRecord, callback) {
+  YamlPersistor.prototype.update = function (updatedRecord, callback) {
     var
       self = this;
 
-    self.readJson(function (err, records) {
+    self.readYaml(function (err, records) {
       if (err) {
         return callback(err);
       }
@@ -122,7 +123,7 @@
       if (recordIndex !== undefined) {
         // Found the record, update it and save
         records[recordIndex] = updatedRecord;
-        self.writeJson(records, callback);
+        self.writeYaml(records, callback);
       } else {
         // Else we didn't find the record
         err = new Error();
@@ -132,11 +133,11 @@
     });
   };
 
-  LocalPersistor.prototype.remove = function (id, callback) {
+  YamlPersistor.prototype.remove = function (id, callback) {
     var
       self = this;
 
-    self.readJson(function (err, records) {
+    self.readYaml(function (err, records) {
       if (err) {
         return callback(err);
       }
@@ -158,7 +159,7 @@
       if (recordIndex !== undefined) {
         // Found the record, remove it and save
         records.splice(recordIndex, 1);
-        self.writeJson(records, callback);
+        self.writeYaml(records, callback);
 
       } else {
         // Else we didn't find the record
@@ -175,7 +176,7 @@
    * @param {array} records - An array of objects with property, 'id'.
    * @returns {number} - The max Id found.
    */
-  LocalPersistor.prototype.getMaxId = function (records) {
+  YamlPersistor.prototype.getMaxId = function (records) {
     var
       i,
       maxId = 0;
@@ -188,57 +189,65 @@
   };
 
   /**
-   * Reads json from a file.  If file does not exist an empty object is
+   * Reads ymal from a file.  If file does not exist an empty object is
    * returned.  Can return an error if there is a parse error.
    *
-   * @param {function(err, data)} callback - data is the parsed json object.
+   * @param {function(err, data)} callback - data is the parsed object.
    */
-  LocalPersistor.prototype.readJson = function (callback) {
+  YamlPersistor.prototype.readYaml = function (callback) {
     var
       self = this;
-    fse.readJson(self.filePath, function (err, data) {
+    fse.readFile(self.filePath, function (err, data) {
       // If it doesn't exist give appropriate error
-      if (err) {
-        if (err.code === 'ENOENT') {
-          err.status = self.notFoundError;
-          err.message = 'LocalFilePersistor: Could not find "' + self.filePath + '".';
-          return callback(err);
-        }
-        err.status = self.serverError;
+      if (err && err.code === 'ENOENT') {
+        err.status = self.notFoundError;
+        err.message = 'YamlPersistor: Could not find "' + path.resolve(self.filePath) + '".';
         return callback(err);
       }
+      try {
+        data = yaml.safeLoad(data);
+      } catch (e) {
+        e.status = self.serverError;
+        e.message = 'YamlPersistor: Could not parse "' + path.resolve(self.filePath) + '".';
+        return callback(e);
+      }
+
       // Else return the err (if success err == null)
       return callback(err, data);
     });
   };
 
   /**
-   * writes json to a file.  If filePath does not exist it is created.
+   * Writes yaml to a file.  If filePath does not exist it is created.
    *
    * @param {object} data - Data to stringify and write.
    * @param {function(err)} callback
    */
-  LocalPersistor.prototype.writeJson = function (data, callback) {
+  YamlPersistor.prototype.writeYaml = function (data, callback) {
     var
       self = this;
 
-    fse.writeJson(self.filePath, data, function (err) {
+    try {
+      data = yaml.safeDump(data);
+    } catch (e) {
+      e.status = self.clientError;
+      e.message = 'YamlPersistor: Could not convert "' + JSON.stringify(data) + '"to yaml.';
+      return callback(e);
+    }
+
+    fse.writeFile(self.filePath, data, function (err) {
 
       // If it doesn't exist create it
-      if (err) {
-        if (err.code === 'ENOENT') {
-          return fse.mkdirs(path.dirname(self.filePath), function (err) {
-            if (err) {
+      if (err && err.code === 'ENOENT') {
+        return fse.mkdirs(path.dirname(self.filePath), function (err) {
+          if (err) {
+            callback(err);
+          } else {
+            fse.writeFile(self.filePath, data, function (err) {
               callback(err);
-            } else {
-              fse.writeJson(self.filePath, data, function (err) {
-                callback(err);
-              });
-            }
-          });
-        }
-        err.status = self.clientError;
-        return callback(err);
+            });
+          }
+        });
       }
 
       // Else return the err (if success err == null)
@@ -246,5 +255,5 @@
     });
   };
 
-  module.exports = LocalPersistor;
+  module.exports = YamlPersistor;
 }());

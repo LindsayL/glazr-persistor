@@ -1,4 +1,4 @@
-/*jslint node: true, nomen: true, unparam: true*/
+/*jslint node: true*/
 (function () {
   'use strict';
   var
@@ -90,7 +90,7 @@
     // Check that super dn exists
     self.search(subDn, 'base', function (err) {
       if (err) {
-        if (err.code === 404) {
+        if (err.status === 404) {
           err.name = 'Path does not exist.';
           err.message = 'The super dn, "' + subDn + '", does not exist.';
         }
@@ -325,7 +325,7 @@
    * @returns {object} The translated error.
    */
   LdapPersistor.prototype.errorParser = function (err) {
-    if (!err || (!err.code && !err.message && !err.name)) {
+    if (!err || (!err.status && !err.message && !err.name)) {
       // We don't really have an error
       return undefined;
     }
@@ -338,14 +338,14 @@
       error = new Error();
     error.name = err.name;
     error.message = err.message;
-    error.code = err.code;
+    error.status = 500;
     error.stack = err.stack;
     if (err && (err.name === 'NoSuchObjectError' || err.name === 'InvalidDistinguishedNameError')) {
-      error.code = 404;
+      error.status = 404;
     } else if (utils.matchExists([err.name], clientErrors)) {
-      error.code = 400;
+      error.status = 400;
     } else if (err.name === 'ProtocolError' && err.message === 'no attributes provided') {
-      error.code = 400;
+      error.status = 400;
       error.name = 'MissingAttribute';
       error.message = 'Missing required attributes to create an object of class "' + this.entryObjectClass + '"';
     }
