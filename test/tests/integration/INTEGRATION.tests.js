@@ -9,7 +9,7 @@
     var
       should = require('should'),
       utils = require('glazr-utils'),
-      NO_ID_CODE = 'NOID',
+      CLIENT_ERROR_CODE = 400,
       NOT_FOUND_CODE = 404,
       id,
       item1 = testObjects[0],
@@ -289,7 +289,7 @@
         it('should return an error', function (done) {
           persistor.update({member: 'blah'}, function (err) {
             should.exist(err);
-            err.status.should.equal(NO_ID_CODE);
+            err.status.should.equal(CLIENT_ERROR_CODE);
             done();
           });
         });
