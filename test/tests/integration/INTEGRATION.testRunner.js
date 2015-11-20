@@ -188,59 +188,49 @@
       testSuite(persistor, refreshResourceFn, refreshResourceFn, testObjects, testParam);
     });
 
-    describe("INTEGRATION", function () {
-      try {
-        config = require('../../support/config');
-      } catch (e) {
-        e.message += '\n!!!Please create the file "test/support/config.js" '
-          + 'according to the instructions found in "test/support/configTemplate.js".!!!';
-        throw e;
-      }
+    describe.only('Yaml', function () {
 
-      describe('Yaml', function () {
-
-        // Init persistor
-        var
-          fse = require('fs-extra'),
-          fileDir = 'someTempDir',
-          fileName = 'tempLocalFileForTest.yaml',
-          filePath = path.resolve(path.join(fileDir, fileName)),
-          options = {
-            type: 'Yaml',
-            config: {
-              filePath: filePath
-            }
-          },
-          persistor = new Persistor(options),
-          refreshResourceFn;
-
-        // Create removeResourceFn
-        refreshResourceFn = function (done) {
-          /*jslint stupid: true*/
-          if (fse.existsSync(fileDir)) {
-            fse.remove(fileDir, function (err) {
-              should.not.exist(err);
-              done();
-            });
-          } else {
-            done();
+      // Init persistor
+      var
+        fse = require('fs-extra'),
+        fileDir = 'someTempDir',
+        fileName = 'tempLocalFileForTest.yaml',
+        filePath = path.resolve(path.join(fileDir, fileName)),
+        options = {
+          type: 'Yaml',
+          config: {
+            filePath: filePath
           }
-        };
+        },
+        persistor = new Persistor(options),
+        refreshResourceFn;
 
-        testParam = 'param';
-        testObjects = [];
-        temp = {};
-        temp[testParam] = 'blah1';
-        testObjects.push(temp);
-        temp[testParam] = 'blah2';
-        testObjects.push(temp);
-        temp[testParam] = 'blah3';
-        testObjects.push(temp);
-        temp[testParam] = 'blah4';
-        testObjects.push(temp);
+      // Create removeResourceFn
+      refreshResourceFn = function (done) {
+        /*jslint stupid: true*/
+        if (fse.existsSync(fileDir)) {
+          fse.remove(fileDir, function (err) {
+            should.not.exist(err);
+            done();
+          });
+        } else {
+          done();
+        }
+      };
 
-        testSuite(persistor, refreshResourceFn, refreshResourceFn, testObjects, testParam);
-      });
+      testParam = 'param';
+      testObjects = [];
+      temp = {};
+      temp[testParam] = 'blah1';
+      testObjects.push(temp);
+      temp[testParam] = 'blah2';
+      testObjects.push(temp);
+      temp[testParam] = 'blah3';
+      testObjects.push(temp);
+      temp[testParam] = 'blah4';
+      testObjects.push(temp);
+
+      testSuite(persistor, refreshResourceFn, refreshResourceFn, testObjects, testParam);
     });
 
   });
