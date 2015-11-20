@@ -188,7 +188,7 @@
       testSuite(persistor, refreshResourceFn, refreshResourceFn, testObjects, testParam);
     });
 
-    describe.only('Yaml', function () {
+    describe('Yaml', function () {
 
       // Init persistor
       var
