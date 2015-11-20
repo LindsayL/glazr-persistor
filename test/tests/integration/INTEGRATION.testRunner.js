@@ -83,7 +83,7 @@
       removeResourceFn = function (done) {
         persistor.adapter.search(options.config.searchBase, 'sub', function (err, records) {
           if (err) {
-            if (err.code === 404) {
+            if (err.status === 404) {
               return done();
             }
             should.not.exist(err);

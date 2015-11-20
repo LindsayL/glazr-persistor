@@ -93,7 +93,7 @@
         it('should return an error', function (done) {
           persistor.get(12, function (err, record) {
             should.exist(err);
-            err.code.should.equal(NOT_FOUND_CODE);
+            err.status.should.equal(NOT_FOUND_CODE);
             should.not.exist(record);
             done();
           });
@@ -116,7 +116,7 @@
         it('should return an error', function (done) {
           persistor.get(id, function (err, record) {
             should.exist(err);
-            err.code.should.equal(NOT_FOUND_CODE);
+            err.status.should.equal(NOT_FOUND_CODE);
             should.not.exist(record);
             done();
           });
@@ -148,7 +148,7 @@
         it('should return an error when looking for invalid id', function (done) {
           persistor.get(id1 + id2 + id3, function (err, record) {
             should.exist(err);
-            err.code.should.equal(NOT_FOUND_CODE);
+            err.status.should.equal(NOT_FOUND_CODE);
             should.not.exist(record);
             done();
           });
@@ -198,7 +198,7 @@
         it('should return a not found error', function (done) {
           persistor.getAll(function (err) {
             should.exist(err);
-            err.code.should.equal(NOT_FOUND_CODE);
+            err.status.should.equal(NOT_FOUND_CODE);
             done();
           });
         });
@@ -215,7 +215,7 @@
               should.not.exist(err);
               persistor.get(id, function (err, record) {
                 should.exist(err);
-                err.code.should.equal(NOT_FOUND_CODE);
+                err.status.should.equal(NOT_FOUND_CODE);
                 should.not.exist(record);
                 done();
               });
@@ -289,7 +289,7 @@
         it('should return an error', function (done) {
           persistor.update({member: 'blah'}, function (err) {
             should.exist(err);
-            err.code.should.equal(NO_ID_CODE);
+            err.status.should.equal(NO_ID_CODE);
             done();
           });
         });
@@ -298,17 +298,17 @@
         it('should return an error', function (done) {
           persistor.update({id: 12}, function (err) {
             should.exist(err);
-            err.code.should.equal(NOT_FOUND_CODE);
+            err.status.should.equal(NOT_FOUND_CODE);
             done();
           });
         });
         it('should not add the entry', function (done) {
           persistor.update({id: 12}, function (err) {
             should.exist(err);
-            err.code.should.equal(NOT_FOUND_CODE);
+            err.status.should.equal(NOT_FOUND_CODE);
             persistor.get(12, function (err, record) {
               should.exist(err);
-              err.code.should.equal(NOT_FOUND_CODE);
+              err.status.should.equal(NOT_FOUND_CODE);
               should.not.exist(record);
               done();
             });
@@ -327,17 +327,17 @@
         it('should return an error', function (done) {
           persistor.update({id: id + 12}, function (err) {
             should.exist(err);
-            err.code.should.equal(NOT_FOUND_CODE);
+            err.status.should.equal(NOT_FOUND_CODE);
             done();
           });
         });
         it('should not add the entry', function (done) {
           persistor.update({id: id + 12}, function (err) {
             should.exist(err);
-            err.code.should.equal(NOT_FOUND_CODE);
+            err.status.should.equal(NOT_FOUND_CODE);
             persistor.get(12, function (err, record) {
               should.exist(err);
-              err.code.should.equal(NOT_FOUND_CODE);
+              err.status.should.equal(NOT_FOUND_CODE);
               should.not.exist(record);
               done();
             });
@@ -446,7 +446,7 @@
         it('should throw an error', function (done) {
           persistor.get(id, function (err, record) {
             should.exist(err);
-            err.code.should.equal(NOT_FOUND_CODE);
+            err.status.should.equal(NOT_FOUND_CODE);
             should.not.exist(record);
             done();
           });
@@ -477,7 +477,7 @@
             // Check that the entry is gone
             persistor.get(id, function (err, record) {
               should.exist(err);
-              err.code.should.equal(NOT_FOUND_CODE);
+              err.status.should.equal(NOT_FOUND_CODE);
               should.not.exist(record);
               done();
             });

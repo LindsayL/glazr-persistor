@@ -110,7 +110,7 @@
         it('should throw an error if no id in reocrd', function (done) {
           persistor.update({param: 'blah'}, function (err) {
             should.exist(err);
-            err.code.should.equal(NO_ID_CODE);
+            err.status.should.equal(NO_ID_CODE);
             done();
           });
         });

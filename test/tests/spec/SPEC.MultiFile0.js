@@ -130,7 +130,7 @@
     //        callback();
     //      });
     //      persistor.writeJson(item, function (err) {
-    //        err.code.should.equal('ENOENT');
+    //        err.status.should.equal('ENOENT');
     //        done();
     //      });
     //    });
@@ -286,7 +286,7 @@
     //    it('should return an error', function (done) {
     //      persistor.get(12, function (err, record) {
     //        should.exist(err);
-    //        err.code.should.equal(NOT_FOUND_CODE);
+    //        err.status.should.equal(NOT_FOUND_CODE);
     //        should.not.exist(record);
     //        done();
     //      });
@@ -328,7 +328,7 @@
     //    it('should return an error when looking for invalid id', function (done) {
     //      persistor.get(id1 + id2 + id3, function (err, record) {
     //        should.exist(err);
-    //        err.code.should.equal(NOT_FOUND_CODE);
+    //        err.status.should.equal(NOT_FOUND_CODE);
     //        should.not.exist(record);
     //        done();
     //      });
@@ -499,14 +499,14 @@
     //    it('should return an error', function (done) {
     //      persistor.update({id: myId}, function (err) {
     //        should.exist(err);
-    //        err.code.should.equal(NOT_FOUND_CODE);
+    //        err.status.should.equal(NOT_FOUND_CODE);
     //        done();
     //      });
     //    });
     //    it('should not add the entry', function (done) {
     //      persistor.update({id: myId}, function (err) {
     //        should.exist(err);
-    //        err.code.should.equal(NOT_FOUND_CODE);
+    //        err.status.should.equal(NOT_FOUND_CODE);
     //        persistor.get(myId, function (err, record) {
     //          should.exist(err);
     //          should.not.exist(record);
@@ -654,7 +654,7 @@
     //    it('should return an error', function (done) {
     //      persistor.remove(myId, function (err) {
     //        should.exist(err);
-    //        err.code.should.equal(NOT_FOUND_CODE);
+    //        err.status.should.equal(NOT_FOUND_CODE);
     //        done();
     //      });
     //    });

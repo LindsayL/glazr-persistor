@@ -19,6 +19,7 @@
     this.dir = options.dir;
     this.notFoundError = 404;
     this.serverError = 500;
+    this.clientError = 400;
   };
 
   MultiFilePersistor.prototype.create = function (data, callback) {
@@ -35,6 +36,9 @@
       id += 1;
       data.id = id;
       fse.writeJson(self.dir + '/' + id + '.json', data, function (err) {
+        if (err) {
+          err.status = self.clientError;
+        }
         callback(err, id);
       });
     };
@@ -53,13 +57,13 @@
         if (err.code === 'ENOENT') {
           fse.mkdir(self.dir, function (err) {
             if (err) {
-              err.code = self.serverError;
+              err.status = self.serverError;
               return callback(err);
             }
             createFn([], callback);
           });
         } else {
-          err.code = self.serverError;
+          err.status = self.serverError;
           callback(err);
         }
       } else {
@@ -73,7 +77,7 @@
     fse.readJson(self.dir + '/' + id + '.json', function (err, contents) {
       if (err) {
         if (err.code === 'ENOENT') {
-          err.code = self.notFoundError;
+          err.status = self.notFoundError;
           err.message = 'Failed to find ' + self.dir + '/' + id + '.json';
         }
         return callback(err);
@@ -92,7 +96,7 @@
         var
           barrier = utils.syncBarrier(files.length, function (err) {
             if (err && err.length) {
-              err[0].code = self.serverError;
+              err[0].status = self.serverError;
               return callback(err[0]);
             }
             callback(err, records);
@@ -110,10 +114,10 @@
       } else {
         if (err) {
           if (err.code === 'ENOENT') {
-            err.code = self.notFoundError;
+            err.status = self.notFoundError;
             err.message = 'Failed to find ' + self.dir;
           } else {
-            err.code = self.serverError;
+            err.status = self.serverError;
           }
           return callback(err);
         }

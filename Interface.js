@@ -90,7 +90,7 @@
   Persistor.prototype.update = function (updatedRecord, callback) {
     if (updatedRecord.id === undefined || updatedRecord.id === null) {
       var err = new Error();
-      err.code = 'NOID';
+      err.status = 'NOID';
       err.message = 'No "id" specified in the record. (' + JSON.stringify(updatedRecord) + ')';
       return callback(err);
     }

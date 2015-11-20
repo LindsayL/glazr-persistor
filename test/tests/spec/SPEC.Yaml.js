@@ -17,6 +17,7 @@
       yaml = require('js-yaml'),
       filePath = path.resolve('someTempDir/someTempFile.yaml'),
       NOT_FOUND_CODE = 404,
+      CLIENT_ERROR_CODE = 400,
       SERVER_ERROR_CODE = 500,
       id,
       item = {param: 'blah'},
@@ -71,7 +72,7 @@
         });
         persistor.readYaml(function (err) {
           should.exist(err);
-          err.code.should.equal(NOT_FOUND_CODE);
+          err.status.should.equal(NOT_FOUND_CODE);
           done();
         });
       });
@@ -86,7 +87,7 @@
         });
         persistor.readYaml(function (err, data) {
           should.exist(err);
-          err.code.should.equal(SERVER_ERROR_CODE);
+          err.status.should.equal(SERVER_ERROR_CODE);
           should.not.exist(data);
           done();
         });
@@ -123,14 +124,14 @@
             callback({code: 'ENOENT'});
           });
         });
-        it('should call and pass out any errors from mkdirs', function (done) {
+        it('should call and pass out any errors from yamle.safeDump', function (done) {
           sinon.stub(yaml, 'safeDump', function (data) {
             /*jslint unparam: true*/
             throw new Error(myError);
           });
           persistor.writeYaml(item, function (err) {
             should.exist(err);
-            err.code.should.equal(SERVER_ERROR_CODE);
+            err.status.should.equal(CLIENT_ERROR_CODE);
             done();
           });
         });
@@ -309,7 +310,7 @@
         it('should return an error', function (done) {
           persistor.get(12, function (err, record) {
             should.exist(err);
-            err.code.should.equal(NOT_FOUND_CODE);
+            err.status.should.equal(NOT_FOUND_CODE);
             should.not.exist(record);
             done();
           });
@@ -351,7 +352,7 @@
         it('should return an error when looking for invalid id', function (done) {
           persistor.get(id1 + id2 + id3, function (err, record) {
             should.exist(err);
-            err.code.should.equal(NOT_FOUND_CODE);
+            err.status.should.equal(NOT_FOUND_CODE);
             should.not.exist(record);
             done();
           });
@@ -524,14 +525,14 @@
         it('should return an error', function (done) {
           persistor.update({id: myId}, function (err) {
             should.exist(err);
-            err.code.should.equal(NOT_FOUND_CODE);
+            err.status.should.equal(NOT_FOUND_CODE);
             done();
           });
         });
         it('should not add the entry', function (done) {
           persistor.update({id: myId}, function (err) {
             should.exist(err);
-            err.code.should.equal(NOT_FOUND_CODE);
+            err.status.should.equal(NOT_FOUND_CODE);
             persistor.get(myId, function (err, record) {
               should.exist(err);
               should.not.exist(record);
@@ -681,7 +682,7 @@
         it('should return an error', function (done) {
           persistor.remove(myId, function (err) {
             should.exist(err);
-            err.code.should.equal(NOT_FOUND_CODE);
+            err.status.should.equal(NOT_FOUND_CODE);
             done();
           });
         });

@@ -22,6 +22,7 @@
     this.filePath = options.filePath;
     this.notFoundError = 404;
     this.serverError = 500;
+    this.clientError = 400;
   };
 
   YamlPersistor.prototype.create = function (record, callback) {
@@ -30,7 +31,7 @@
 
     self.readYaml(function (err, records) {
       if (err) {
-        if (err.code === self.notFoundError) {
+        if (err.status === self.notFoundError) {
           records = [];
         } else {
           return callback(err);
@@ -85,7 +86,7 @@
         callback(err, result);
       } else {
         err = new Error();
-        err.code = self.notFoundError;
+        err.status = self.notFoundError;
         callback(err);
       }
     });
@@ -126,7 +127,7 @@
       } else {
         // Else we didn't find the record
         err = new Error();
-        err.code = self.notFoundError;
+        err.status = self.notFoundError;
         callback(err);
       }
     });
@@ -163,7 +164,7 @@
       } else {
         // Else we didn't find the record
         err = new Error();
-        err.code = self.notFoundError;
+        err.status = self.notFoundError;
         callback(err);
       }
     });
@@ -199,14 +200,14 @@
     fse.readFile(self.filePath, function (err, data) {
       // If it doesn't exist give appropriate error
       if (err && err.code === 'ENOENT') {
-        err.code = self.notFoundError;
+        err.status = self.notFoundError;
         err.message = 'YamlPersistor: Could not find "' + path.resolve(self.filePath) + '".';
         return callback(err);
       }
       try {
         data = yaml.safeLoad(data);
       } catch (e) {
-        e.code = self.serverError;
+        e.status = self.serverError;
         e.message = 'YamlPersistor: Could not parse "' + path.resolve(self.filePath) + '".';
         return callback(e);
       }
@@ -229,7 +230,7 @@
     try {
       data = yaml.safeDump(data);
     } catch (e) {
-      e.code = self.serverError;
+      e.status = self.clientError;
       e.message = 'YamlPersistor: Could not convert "' + JSON.stringify(data) + '"to yaml.';
       return callback(e);
     }

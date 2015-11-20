@@ -21,6 +21,7 @@
     this.filePath = options.filePath;
     this.notFoundError = 404;
     this.serverError = 500;
+    this.clientError = 400;
   };
 
   LocalPersistor.prototype.create = function (record, callback) {
@@ -29,7 +30,7 @@
 
     self.readJson(function (err, records) {
       if (err) {
-        if (err.code === self.notFoundError) {
+        if (err.status === self.notFoundError) {
           records = [];
         } else {
           return callback(err);
@@ -84,7 +85,7 @@
         callback(err, result);
       } else {
         err = new Error();
-        err.code = self.notFoundError;
+        err.status = self.notFoundError;
         callback(err);
       }
     });
@@ -125,7 +126,7 @@
       } else {
         // Else we didn't find the record
         err = new Error();
-        err.code = self.notFoundError;
+        err.status = self.notFoundError;
         callback(err);
       }
     });
@@ -162,7 +163,7 @@
       } else {
         // Else we didn't find the record
         err = new Error();
-        err.code = self.notFoundError;
+        err.status = self.notFoundError;
         callback(err);
       }
     });
@@ -199,11 +200,11 @@
       // If it doesn't exist give appropriate error
       if (err) {
         if (err.code === 'ENOENT') {
-          err.code = self.notFoundError;
+          err.status = self.notFoundError;
           err.message = 'LocalFilePersistor: Could not find "' + self.filePath + '".';
           return callback(err);
         }
-        err.code = self.serverError;
+        err.status = self.serverError;
         return callback(err);
       }
       // Else return the err (if success err == null)
@@ -236,7 +237,7 @@
             }
           });
         }
-        err.code = self.serverError;
+        err.status = self.clientError;
         return callback(err);
       }
 
