@@ -87,6 +87,7 @@
       } else {
         err = new Error();
         err.status = self.notFoundError;
+        err.message = 'Id, "' + id + '", not found in "' + self.filePath + '".';
         callback(err);
       }
     });

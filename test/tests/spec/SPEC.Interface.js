@@ -12,7 +12,7 @@
 
   describe('SPEC.Interface', function () {
     var
-      NO_ID_CODE = 'NOID',
+      CLIENT_ERROR_CODE = 400,
       persistor;
 
     describe('Instantiation', function () {
@@ -110,7 +110,7 @@
         it('should throw an error if no id in reocrd', function (done) {
           persistor.update({param: 'blah'}, function (err) {
             should.exist(err);
-            err.status.should.equal(NO_ID_CODE);
+            err.status.should.equal(CLIENT_ERROR_CODE);
             done();
           });
         });
