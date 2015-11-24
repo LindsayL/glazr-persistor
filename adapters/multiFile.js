@@ -55,7 +55,7 @@
     fse.readdir(self.dir, function (err, files) {
       if (err) {
         if (err.code === 'ENOENT') {
-          fse.mkdir(self.dir, function (err) {
+          fse.mkdirs(self.dir, function (err) {
             if (err) {
               err.status = self.serverError;
               return callback(err);
