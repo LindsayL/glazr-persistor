@@ -30,7 +30,7 @@
         fse = require('fs-extra'),
         fileDir = 'someTempDir',
         fileName = 'tempLocalFileForTest.json',
-        filePath = path.resolve(path.join(fileDir, fileName)),
+        filePath = path.resolve(path.join(fileDir, 'thatIsNested', fileName)),
         options = {
           type: 'LocalFile',
           config: {
@@ -155,7 +155,7 @@
       var
         fse = require('fs-extra'),
         fileDir = 'someTempDir',
-        filePath = path.resolve(fileDir),
+        filePath = path.join(path.resolve(fileDir), 'thatIsNested'),
         options = {
           type: 'MultiFile',
           config: {
