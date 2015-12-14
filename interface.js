@@ -15,6 +15,7 @@
    */
   var Persistor = function (options) {
     this.adapter = this.getAdapter(options);
+    this.type = options.type;
   };
 
   /**

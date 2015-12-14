@@ -18,7 +18,6 @@
    * @constructor
    */
   LdapPersistor = function (options) {
-    this.type = 'Ldap';
     var
       self = this,
       requiredParams = [

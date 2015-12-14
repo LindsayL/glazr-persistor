@@ -71,7 +71,7 @@
             remove: {}
           };
         });
-        persistor = new Persistor();
+        persistor = new Persistor({});
       });
 
       describe('#create(record, callback)', function () {

@@ -11,7 +11,6 @@
 
 
   MultiFilePersistor = function (options) {
-    this.type = 'MultiFile';
     if (!options.dir) {
       throw new Error('Persistor initialization: type="MultiFile", '
         + 'No dir specified in options.config (see readme).');

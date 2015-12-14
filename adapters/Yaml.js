@@ -14,7 +14,6 @@
    * @constructor
    */
   YamlPersistor = function (options) {
-    this.type = 'Yaml';
     if (!options.filePath) {
       throw new Error('Persistor initialization: type="Yaml", '
         + 'No filePath specified in options.config (see readme).');
