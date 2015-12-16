@@ -20,7 +20,7 @@
       SERVER_ERROR_CODE = 500,
       id,
       item = {param: 'blah'},
-      myError = 'MahSpecialError!',
+      myError = {blah: 'MahSpecialError!'},
       resourceContents,
       persistor;
 
@@ -130,7 +130,7 @@
             callback(myError);
           });
           persistor.writeJson(item, function (err) {
-            err.should.equal(myError);
+            JSON.stringify(err).should.equal(JSON.stringify(myError));
             done();
           });
         });
@@ -175,7 +175,7 @@
         });
         it('should call the callback with the error', function (done) {
           persistor.create(item, function (err, recordId) {
-            err.should.equal(myError);
+            JSON.stringify(err).should.equal(JSON.stringify(myError));
             should.not.exist(recordId);
             done();
           });
@@ -193,7 +193,7 @@
         });
         it('should call the callback with the error', function (done) {
           persistor.create(item, function (err, recordId) {
-            err.should.equal(myError);
+            JSON.stringify(err).should.equal(JSON.stringify(myError));
             should.not.exist(recordId);
             done();
           });
@@ -284,7 +284,7 @@
         });
         it('should call the callback with the error', function (done) {
           persistor.get(item, function (err, record) {
-            err.should.equal(myError);
+            JSON.stringify(err).should.equal(JSON.stringify(myError));
             should.not.exist(record);
             done();
           });
@@ -391,7 +391,7 @@
         });
         it('should call the callback with the error', function (done) {
           persistor.getAll(function (err, records) {
-            err.should.equal(myError);
+            JSON.stringify(err).should.equal(JSON.stringify(myError));
             should.not.exist(records);
             done();
           });
@@ -476,7 +476,7 @@
         });
         it('should call the callback with the error', function (done) {
           persistor.update({id: 1}, function (err, recordId) {
-            err.should.equal(myError);
+            JSON.stringify(err).should.equal(JSON.stringify(myError));
             should.not.exist(recordId);
             done();
           });
@@ -495,7 +495,7 @@
         });
         it('should call the callback with the error', function (done) {
           persistor.update({id: myId}, function (err, recordId) {
-            err.should.equal(myError);
+            JSON.stringify(err).should.equal(JSON.stringify(myError));
             should.not.exist(recordId);
             done();
           });
@@ -635,7 +635,7 @@
         });
         it('should call the callback with the error', function (done) {
           persistor.remove(myId, function (err) {
-            err.should.equal(myError);
+            JSON.stringify(err).should.equal(JSON.stringify(myError));
             done();
           });
         });
@@ -653,7 +653,7 @@
         });
         it('should call the callback with the error', function (done) {
           persistor.remove(myId, function (err) {
-            err.should.equal(myError);
+            JSON.stringify(err).should.equal(JSON.stringify(myError));
             done();
           });
         });

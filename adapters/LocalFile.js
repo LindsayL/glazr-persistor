@@ -4,6 +4,7 @@
   var
     fse = require('graceful-fs-extra'),
     path = require('path'),
+    helper = require('../helper'),
     LocalPersistor;
 
 
@@ -14,8 +15,8 @@
    */
   LocalPersistor = function (options) {
     if (!options.filePath) {
-      throw new Error('Persistor initialization: type="LocalFile", '
-        + 'No filePath specified in options.config (see readme).');
+      throw this.parseError(new Error('Persistor initialization: type="LocalFile", '
+        + 'No filePath specified in options.config (see readme).'));
     }
     this.filePath = options.filePath;
     this.notFoundError = 404;
@@ -86,7 +87,7 @@
         err = new Error();
         err.status = self.notFoundError;
         err.message = 'Id, "' + id + '", not found in "' + self.filePath + '".';
-        callback(err);
+        callback(self.parseError(err));
       }
     });
   };
@@ -127,7 +128,7 @@
         // Else we didn't find the record
         err = new Error();
         err.status = self.notFoundError;
-        callback(err);
+        callback(self.parseError(err));
       }
     });
   };
@@ -164,7 +165,7 @@
         // Else we didn't find the record
         err = new Error();
         err.status = self.notFoundError;
-        callback(err);
+        callback(self.parseError(err));
       }
     });
   };
@@ -202,13 +203,13 @@
         if (err.code === 'ENOENT') {
           err.status = self.notFoundError;
           err.message = 'LocalFilePersistor: Could not find "' + self.filePath + '".';
-          return callback(err);
+          return callback(self.parseError(err));
         }
         err.status = self.serverError;
-        return callback(err);
+        return callback(self.parseError(err));
       }
       // Else return the err (if success err == null)
-      return callback(err, data);
+      return callback(self.parseError(err), data);
     });
   };
 
@@ -229,21 +230,25 @@
         if (err.code === 'ENOENT') {
           return fse.mkdirs(path.dirname(self.filePath), function (err) {
             if (err) {
-              callback(err);
+              callback(self.parseError(err));
             } else {
               fse.writeJson(self.filePath, data, function (err) {
-                callback(err);
+                callback(self.parseError(err));
               });
             }
           });
         }
         err.status = self.clientError;
-        return callback(err);
+        return callback(self.parseError(err));
       }
 
       // Else return the err (if success err == null)
-      return callback(err);
+      return callback(self.parseError(err));
     });
+  };
+
+  LocalPersistor.prototype.parseError = function (error) {
+    return helper.parseError(error);
   };
 
   module.exports = LocalPersistor;
