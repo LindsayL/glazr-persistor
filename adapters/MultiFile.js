@@ -4,7 +4,7 @@
   'use strict';
 
   var
-    fse = require('fs-extra'),
+    fse = require('graceful-fs-extra'),
     path = require('path'),
     utils = require('glazr-utils'),
     MultiFilePersistor;
