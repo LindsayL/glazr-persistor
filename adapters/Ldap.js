@@ -35,8 +35,6 @@
       }
       self[object] = options[object];
     });
-
-    this.client = this.connect();
   };
 
   LdapPersistor.prototype.connect = function () {
@@ -45,9 +43,6 @@
       client,
       connectionOptions = {
         url: this.url
-        // Apparently binding initially does not happen... So bind manually as required
-        //bindDN: this.bindDn,
-        //bindCredentials: this.bindCredentials
       };
     client = ldap.createClient(connectionOptions);
 
@@ -117,6 +112,7 @@
       }
       try {
         self.client.add(String(dn), record, [], function (err) {
+          self.client.unbind();
           err = self.errorParser(err);
           if (createOwnDn && err && err.name === 'EntryAlreadyExistsError') {
             return self.add(undefined, record, callback);
@@ -214,6 +210,7 @@
 
       try {
         self.client.del(String(id), [], function (err) {
+          self.client.unbind();
           err = self.errorParser(err);
           return callback(err);
         });
@@ -228,6 +225,7 @@
    * @param {function(err)} callback
    */
   LdapPersistor.prototype.authenticate = function (callback) {
+    this.client = this.connect();
     this.client.bind(this.bindDn, this.bindCredentials, [], callback);
   };
 
@@ -242,6 +240,7 @@
    * @param filter - defaults to '(objectclass=' + this.entryObjectClass + ')'.
    */
   LdapPersistor.prototype.search = function (dn, scope, callback, filter) {
+    this.client = this.connect();
     if (filter === undefined) {
       filter = '(objectclass=' + this.entryObjectClass + ')';
     }
@@ -270,6 +269,7 @@
           return callback(self.errorParser(err));
         });
         res.on('end', function (err) {
+          self.client.unbind();
           err = self.errorParser(err);
           return callback(err, results);
         });

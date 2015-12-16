@@ -8,7 +8,7 @@
     should = require('should'),
     path = require('path'),
     testSuite = require('./INTEGRATION.tests'),
-    Persistor = require(path.resolve("./Interface.js")),
+    Persistor = require(path.resolve("./interface.js")),
     testParam,
     testObjects,
     temp,

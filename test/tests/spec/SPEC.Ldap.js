@@ -114,9 +114,10 @@
 
     describe('#authenticate(callback)', function () {
       beforeEach(function () {
-        sinon.stub(persistor.client, 'bind', function (user, pass, controls, callback) {
+        //persistor.client = {bind:function(x,y,z,cb){cb();}};
+        sinon.stub(persistor, 'connect', function () {
           /*jslint unparam: true*/
-          callback(myError);
+          return {bind: function (x, y, z, cb) {cb(myError); }};
         });
       });
       it('should call pass the error out to the callback', function () {
@@ -134,9 +135,11 @@
       });
       describe('search Error', function () {
         beforeEach(function () {
-          sinon.stub(persistor.client, 'search', function (location, options, callback) {
-            /*jslint unparam: true*/
-            callback(myError);
+          sinon.stub(persistor, 'connect', function () {
+            return {search: function (location, options, callback) {
+              /*jslint unparam: true*/
+              callback(myError);
+            }};
           });
         });
         it('should call the callback with the error', function (done) {
@@ -149,16 +152,19 @@
       });
       describe('search on("searchReference")', function () {
         beforeEach(function () {
-          sinon.stub(persistor.client, 'search', function (location, options, callback) {
-            /*jslint unparam: true*/
-            var res = {
-              on: function (event, callback) {
-                if (event === 'searchReference') {
-                  callback(myError);
+          sinon.stub(persistor, 'connect', function () {
+
+            return {'search': function (location, options, callback) {
+              /*jslint unparam: true*/
+              var res = {
+                on: function (event, callback) {
+                  if (event === 'searchReference') {
+                    callback(myError);
+                  }
                 }
-              }
-            };
-            callback(null, res);
+              };
+              callback(null, res);
+            }};
           });
         });
         it('should call the callback with the error', function (done) {
@@ -171,16 +177,19 @@
       });
       describe('search on("error")', function () {
         beforeEach(function () {
-          sinon.stub(persistor.client, 'search', function (location, options, callback) {
-            /*jslint unparam: true*/
-            var res = {
-              on: function (event, callback) {
-                if (event === 'error') {
-                  callback(myError);
+          sinon.stub(persistor, 'connect', function () {
+
+            return {'search': function (location, options, callback) {
+              /*jslint unparam: true*/
+              var res = {
+                on: function (event, callback) {
+                  if (event === 'error') {
+                    callback(myError);
+                  }
                 }
-              }
-            };
-            callback(null, res);
+              };
+              callback(null, res);
+            }};
           });
         });
         it('should call the callback with the error', function (done) {
@@ -193,21 +202,26 @@
       });
       describe('search on("end") with error', function () {
         beforeEach(function () {
-          sinon.stub(persistor.client, 'search', function (location, options, callback) {
-            /*jslint unparam: true*/
-            var res = {
-              on: function (event, callback) {
-                if (event === 'end') {
-                  callback(myError);
-                }
-              }
+          sinon.stub(persistor, 'connect', function () {
+
+            return {
+              'search': function (location, options, callback) {
+                /*jslint unparam: true*/
+                var res = {
+                  on: function (event, callback) {
+                    if (event === 'end') {
+                      callback(myError);
+                    }
+                  }
+                };
+                callback(null, res);
+              },
+              unbind: function () {return null; }
             };
-            callback(null, res);
           });
         });
         it('should call the callback with the error', function (done) {
-          persistor.search(persistor.searchBase, 'sub', function (err, records) {
-            /*jslint unparam: true*/
+          persistor.search(persistor.searchBase, 'sub', function (err) {
             err.should.equal(myError);
             done();
           });
@@ -215,16 +229,21 @@
       });
       describe('search on("end") No entries found', function () {
         beforeEach(function () {
-          sinon.stub(persistor.client, 'search', function (location, options, callback) {
-            /*jslint unparam: true*/
-            var res = {
-              on: function (event, callback) {
-                if (event === 'end') {
-                  callback();
-                }
-              }
+          sinon.stub(persistor, 'connect', function () {
+            return {
+              search: function (location, options, callback) {
+                /*jslint unparam: true*/
+                var res = {
+                  on: function (event, callback) {
+                    if (event === 'end') {
+                      callback();
+                    }
+                  }
+                };
+                callback(null, res);
+              },
+              unbind: function () {return null; }
             };
-            callback(null, res);
           });
         });
         it('should return an empty array', function (done) {
@@ -247,21 +266,26 @@
           sinon.stub(persistor, 'formatData', function (record) {
             return record;
           });
-          sinon.stub(persistor.client, 'search', function (location, options, callback) {
-            /*jslint unparam: true*/
-            var res = {
-              on: function (event, callback) {
-                if (event === 'searchEntry') {
-                  callback(entries[0]);
-                  callback(entries[1]);
-                  callback(entries[2]);
-                }
-                if (event === 'end') {
-                  callback();
-                }
-              }
+          sinon.stub(persistor, 'connect', function () {
+            return {
+              search: function (location, options, callback) {
+                /*jslint unparam: true*/
+                var res = {
+                  on: function (event, callback) {
+                    if (event === 'searchEntry') {
+                      callback(entries[0]);
+                      callback(entries[1]);
+                      callback(entries[2]);
+                    }
+                    if (event === 'end') {
+                      callback();
+                    }
+                  }
+                };
+                callback(null, res);
+              },
+              unbind: function () {return null; }
             };
-            callback(null, res);
           });
         });
         it('should return all the records', function (done) {
@@ -503,12 +527,18 @@
       describe('client add error', function () {
         beforeEach(function () {
           sinon.stub(persistor, 'authenticate', function (callback) {
+            persistor.client = persistor.connect();
+            persistor.client.add = function (dn, record, controls, callback) {
+              /*jslint unparam: true*/
+              callback(myError);
+            };
+            persistor.client.unbind = function () {return null; };
             callback();
           });
-          sinon.stub(persistor.client, 'add', function (dn, record, controls, callback) {
-            /*jslint unparam: true*/
-            callback(myError);
-          });
+          //sinon.stub(persistor.client, 'add', function (dn, record, controls, callback) {
+          //  /*jslint unparam: true*/
+          //  callback(myError);
+          //});
         });
         it('should return the error', function (done) {
           persistor.add('', {}, function (err, id) {
@@ -524,10 +554,12 @@
           myId = 'blah';
         beforeEach(function () {
           sinon.stub(persistor, 'authenticate', function (callback) {
-            callback();
-          });
-          sinon.stub(persistor.client, 'add', function (dn, record, controls, callback) {
-            /*jslint unparam: true*/
+            persistor.client = persistor.connect();
+            persistor.client.add = function (dn, record, controls, callback) {
+              /*jslint unparam: true*/
+              callback();
+            };
+            persistor.client.unbind = function () {return null; };
             callback();
           });
         });

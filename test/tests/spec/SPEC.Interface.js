@@ -8,7 +8,7 @@
 
   var
     should = require('should'),
-    Persistor = require('../../../Interface.js');
+    Persistor = require('../../../interface.js');
 
   describe('SPEC.Interface', function () {
     var
