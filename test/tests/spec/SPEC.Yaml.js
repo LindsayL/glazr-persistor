@@ -13,7 +13,7 @@
   describe("SPEC.Yaml", function () {
 
     var
-      fse = require('fs-extra'),
+      fse = require('graceful-fs-extra'),
       yaml = require('js-yaml'),
       filePath = path.resolve('someTempDir/someTempFile.yaml'),
       NOT_FOUND_CODE = 404,

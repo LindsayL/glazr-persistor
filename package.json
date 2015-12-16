@@ -1,6 +1,6 @@
 {
   "name": "glazr-persistor",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "javascript persistor which supports localFile, Multifile, Ldap, Yaml(SingleFile) persistence.",
   "main": "interface.js",
   "scripts": {
@@ -15,7 +15,7 @@
   "dependencies": {
     "glazr-utils": "Glazr/glazr-utils",
     "ldapjs": "^0.7.1",
-    "fs-extra": "^0.23.1",
+    "graceful-fs-extra": "^1.0.6",
     "js-yaml": "3.4.3",
     "path": "^0.11.14"
   },

@@ -13,7 +13,7 @@
   describe("SPEC.MultiFile", function () {
 
     var
-      fse = require('fs-extra'),
+      fse = require('graceful-fs-extra'),
       filePath = path.resolve('someTempDir'),
       NOT_FOUND_CODE = 404,
       id,

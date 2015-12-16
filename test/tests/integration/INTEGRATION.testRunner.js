@@ -27,7 +27,7 @@
 
       // Init persistor
       var
-        fse = require('fs-extra'),
+        fse = require('graceful-fs-extra'),
         fileDir = 'someTempDir',
         fileName = 'tempLocalFileForTest.json',
         filePath = path.resolve(path.join(fileDir, 'thatIsNested', fileName)),
@@ -159,7 +159,7 @@
     describe('MultiFile', function () {
       // Init persistor
       var
-        fse = require('fs-extra'),
+        fse = require('graceful-fs-extra'),
         fileDir = 'someTempDir',
         filePath = path.join(path.resolve(fileDir), 'thatIsNested'),
         options = {
@@ -198,7 +198,7 @@
 
       // Init persistor
       var
-        fse = require('fs-extra'),
+        fse = require('graceful-fs-extra'),
         fileDir = 'someTempDir',
         fileName = 'tempLocalFileForTest.yaml',
         filePath = path.resolve(path.join(fileDir, fileName)),

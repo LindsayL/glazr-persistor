@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var
-    fse = require('fs-extra'),
+    fse = require('graceful-fs-extra'),
     path = require('path'),
     LocalPersistor;
 
