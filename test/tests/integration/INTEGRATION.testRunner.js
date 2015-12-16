@@ -69,6 +69,8 @@
     });
 
     describe('Ldap', function () {
+      this.timeout(60000);
+
       // Init persistor
       var
         options = {
@@ -99,8 +101,8 @@
             persistor.remove(record.id, function (err) {
               if (err) {
                 record.removeAttemps = record.removeAttemps + 1 || 1;
-                if (record.removeAttemps > startLength) {
-                  callback('Failed to remove entries while refreshing ldap resource.');
+                if (record.removeAttemps > startLength * 2) {
+                  callback('Failed to remove entries while refreshing ldap resource. ' + err);
                 }
                 // Else move the record to the end
                 records.push(record);
@@ -115,6 +117,11 @@
               }
             });
           };
+
+          // Longest ids first
+          records.sort(function (a, b) {
+            return b.id.length - a.id.length;
+          });
 
           remove(records, function (err) {
             should.not.exist(err);
@@ -150,7 +157,6 @@
     });
 
     describe('MultiFile', function () {
-
       // Init persistor
       var
         fse = require('fs-extra'),
