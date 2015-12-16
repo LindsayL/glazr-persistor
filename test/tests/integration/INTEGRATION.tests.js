@@ -1,4 +1,4 @@
-/*jslint node:true, unmember: true*/
+/*jslint node:true*/
 /*globals describe, it, before, beforeEach, after, afterEach, vars, path, fse*/
 
 (function () {
@@ -269,6 +269,7 @@
               ];
 
             utils.forEach(records, function (index, record) {
+              /*jslint unparam:true*/
               // Find the matching record
               for (i = 0; i < ids.length; i += 1) {
                 if (record.id === ids[i]) {
@@ -370,8 +371,9 @@
         });
         it('should update only the first record', function (done) {
           persistor.get(id1, function (err, record) {
+            should.not.exist(err);
             myUpdatedItem = utils.merge(record, updatedItem);
-            persistor.update(myUpdatedItem, function (err, id) {
+            persistor.update(myUpdatedItem, function (err) {
               should.not.exist(err);
               persistor.get(id1, function (err, record) {
                 should.not.exist(err);
@@ -382,6 +384,7 @@
                   record.id.should.equal(id2);
                   JSON.stringify(record[testParam]).should.equal(JSON.stringify(item2[testParam]));
                   persistor.get(id3, function (err, record) {
+                    should.not.exist(err);
                     record.id.should.equal(id3);
                     JSON.stringify(record[testParam]).should.equal(JSON.stringify(item3[testParam]));
                     done();
@@ -393,6 +396,7 @@
         });
         it('should update only the second record', function (done) {
           persistor.get(id2, function (err, record) {
+            should.not.exist(err);
             myUpdatedItem = utils.merge(record, updatedItem);
             persistor.update(myUpdatedItem, function (err) {
               should.not.exist(err);
@@ -405,6 +409,7 @@
                   record.id.should.equal(id1);
                   JSON.stringify(record[testParam]).should.equal(JSON.stringify(item1[testParam]));
                   persistor.get(id3, function (err, record) {
+                    should.not.exist(err);
                     record.id.should.equal(id3);
                     JSON.stringify(record[testParam]).should.equal(JSON.stringify(item3[testParam]));
                     done();
@@ -416,6 +421,7 @@
         });
         it('should update only the third record', function (done) {
           persistor.get(id3, function (err, record) {
+            should.not.exist(err);
             myUpdatedItem = utils.merge(record, updatedItem);
             persistor.update(myUpdatedItem, function (err) {
               should.not.exist(err);
@@ -428,6 +434,7 @@
                   record.id.should.equal(id2);
                   JSON.stringify(record[testParam]).should.equal(JSON.stringify(item2[testParam]));
                   persistor.get(id1, function (err, record) {
+                    should.not.exist(err);
                     record.id.should.equal(id1);
                     JSON.stringify(record[testParam]).should.equal(JSON.stringify(item1[testParam]));
                     done();
