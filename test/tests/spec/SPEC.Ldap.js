@@ -19,7 +19,7 @@
       SERVER_ERROR_CODE = 500,
       id,
       item = {param: 'blah'},
-      myError = 'MahSpecialError!',
+      myError = {name: 'MahSpecialError!'},
       resourceContents,
       persistor;
 
@@ -121,14 +121,15 @@
       });
       it('should call pass the error out to the callback', function () {
         persistor.authenticate(function (err) {
-          err.should.equal(myError);
+          should.exist(err);
+          err.name.should.equal(myError.name);
         });
       });
     });
 
     describe('#search(dn, scope, callback)', function () {
       beforeEach(function () {
-        sinon.stub(persistor, 'errorParser', function (err) {
+        sinon.stub(persistor, 'parseError', function (err) {
           return err;
         });
       });
@@ -141,7 +142,8 @@
         });
         it('should call the callback with the error', function (done) {
           persistor.search(persistor.searchBase, 'sub', function (err, records) {
-            err.should.equal(myError);
+            should.exist(err);
+            err.name.should.equal(myError.name);
             should.not.exist(records);
             done();
           });
@@ -163,7 +165,8 @@
         });
         it('should call the callback with the error', function (done) {
           persistor.search(persistor.searchBase, 'sub', function (err, records) {
-            err.should.equal(myError);
+            should.exist(err);
+            err.name.should.equal(myError.name);
             should.not.exist(records);
             done();
           });
@@ -185,7 +188,8 @@
         });
         it('should call the callback with the error', function (done) {
           persistor.search(persistor.searchBase, 'sub', function (err, records) {
-            err.should.equal(myError);
+            should.exist(err);
+            err.name.should.equal(myError.name);
             should.not.exist(records);
             done();
           });
@@ -208,7 +212,8 @@
         it('should call the callback with the error', function (done) {
           persistor.search(persistor.searchBase, 'sub', function (err, records) {
             /*jslint unparam: true*/
-            err.should.equal(myError);
+            should.exist(err);
+            err.name.should.equal(myError.name);
             done();
           });
         });
@@ -330,7 +335,7 @@
       });
     });
 
-    describe('#errorParser(err)', function () {
+    describe('#parseError(err)', function () {
       it('should format the error', function () {
         var
           res,
@@ -338,15 +343,14 @@
             code: 'blah',
             name: 'blah',
             message: 'blah',
-            stack: 'blah',
             somethingelse: 'blah'
           };
-        res = persistor.errorParser(myErr);
+        res = persistor.parseError(myErr);
         res.constructor.name.should.equal('Error');
         res.status.should.equal(SERVER_ERROR_CODE);
         res.name.should.equal(myErr.name);
         res.message.should.equal(myErr.message);
-        res.stack.should.equal(myErr.stack);
+        should.exist(res.stack);
         should.not.exist(res.somethingelse);
       });
       it('should translate the NoSuchObjectError', function () {
@@ -356,15 +360,14 @@
             code: 'blah',
             name: 'NoSuchObjectError',
             message: 'blah',
-            stack: 'blah',
             somethingelse: 'blah'
           };
-        res = persistor.errorParser(myErr);
+        res = persistor.parseError(myErr);
         res.constructor.name.should.equal('Error');
         res.status.should.equal(NOT_FOUND_CODE);
         res.name.should.equal(myErr.name);
         res.message.should.equal(myErr.message);
-        res.stack.should.equal(myErr.stack);
+        should.exist(res.stack);
         should.not.exist(res.somethingelse);
       });
       it('should translate the InvalidDistinguishedNameError', function () {
@@ -374,15 +377,14 @@
             code: 'blah',
             name: 'InvalidDistinguishedNameError',
             message: 'blah',
-            stack: 'blah',
             somethingelse: 'blah'
           };
-        res = persistor.errorParser(myErr);
+        res = persistor.parseError(myErr);
         res.constructor.name.should.equal('Error');
         res.status.should.equal(NOT_FOUND_CODE);
         res.name.should.equal(myErr.name);
         res.message.should.equal(myErr.message);
-        res.stack.should.equal(myErr.stack);
+        should.exist(res.stack);
         should.not.exist(res.somethingelse);
       });
       it('should translate the EntryAlreadyExistsError', function () {
@@ -392,15 +394,14 @@
             code: 'blah',
             name: 'EntryAlreadyExistsError',
             message: 'blah',
-            stack: 'blah',
             somethingelse: 'blah'
           };
-        res = persistor.errorParser(myErr);
+        res = persistor.parseError(myErr);
         res.constructor.name.should.equal('Error');
         res.status.should.equal(CLIENT_ERROR_CODE);
         res.name.should.equal(myErr.name);
         res.message.should.equal(myErr.message);
-        res.stack.should.equal(myErr.stack);
+        should.exist(res.stack);
         should.not.exist(res.somethingelse);
       });
       it('should translate the InvalidAttributeSyntaxError', function () {
@@ -410,15 +411,14 @@
             code: 'blah',
             name: 'InvalidAttributeSyntaxError',
             message: 'blah',
-            stack: 'blah',
             somethingelse: 'blah'
           };
-        res = persistor.errorParser(myErr);
+        res = persistor.parseError(myErr);
         res.constructor.name.should.equal('Error');
         res.status.should.equal(CLIENT_ERROR_CODE);
         res.name.should.equal(myErr.name);
         res.message.should.equal(myErr.message);
-        res.stack.should.equal(myErr.stack);
+        should.exist(res.stack);
         should.not.exist(res.somethingelse);
       });
       it('should translate the UndefinedAttributeTypeError', function () {
@@ -428,15 +428,14 @@
             code: 'blah',
             name: 'UndefinedAttributeTypeError',
             message: 'blah',
-            stack: 'blah',
             somethingelse: 'blah'
           };
-        res = persistor.errorParser(myErr);
+        res = persistor.parseError(myErr);
         res.constructor.name.should.equal('Error');
         res.status.should.equal(CLIENT_ERROR_CODE);
         res.name.should.equal(myErr.name);
         res.message.should.equal(myErr.message);
-        res.stack.should.equal(myErr.stack);
+        should.exist(res.stack);
         should.not.exist(res.somethingelse);
       });
       it('should translate the ProtocolError with "no attributes provided"', function () {
@@ -446,15 +445,14 @@
             code: 'blah',
             name: 'ProtocolError',
             message: 'no attributes provided',
-            stack: 'blah',
             somethingelse: 'blah'
           };
-        res = persistor.errorParser(myErr);
+        res = persistor.parseError(myErr);
         res.constructor.name.should.equal('Error');
         res.status.should.equal(CLIENT_ERROR_CODE);
         res.name.should.not.equal(myErr.name);
         res.message.should.not.equal(myErr.message);
-        res.stack.should.equal(myErr.stack);
+        should.exist(res.stack);
         should.not.exist(res.somethingelse);
       });
       it('should translate the ProtocolError without "no attributes provided"', function () {
@@ -464,24 +462,21 @@
             code: 'blah',
             name: 'ProtocolError',
             message: 'blah',
-            stack: 'blah',
             somethingelse: 'blah'
           };
-        res = persistor.errorParser(myErr);
+        res = persistor.parseError(myErr);
         res.constructor.name.should.equal('Error');
         res.status.should.equal(res.status);
         res.name.should.equal(myErr.name);
         res.message.should.equal(myErr.message);
-        res.stack.should.equal(myErr.stack);
+        should.exist(res.stack);
         should.not.exist(res.somethingelse);
       });
-
-
     });
 
     describe('#add(dn, record, callback)', function () {
       beforeEach(function () {
-        sinon.stub(persistor, 'errorParser', function (err) {
+        sinon.stub(persistor, 'parseError', function (err) {
           return err;
         });
       });
@@ -494,7 +489,7 @@
         it('should return the error', function (done) {
           persistor.add('', {}, function (err, id) {
             should.exist(err);
-            err.should.equal(myError);
+            err.name.should.equal(myError.name);
             should.not.exist(id);
             done();
           });
@@ -514,7 +509,7 @@
           persistor.add('', {}, function (err, id) {
             /*jslint unparam: true*/
             should.exist(err);
-            err.should.equal(myError);
+            err.name.should.equal(myError.name);
             done();
           });
         });
@@ -684,7 +679,8 @@
         });
         it('should call the callback with the error', function (done) {
           persistor.get('someDN', function (err, record) {
-            err.should.equal(myError);
+            should.exist(err);
+            err.name.should.equal(myError.name);
             should.not.exist(record);
             done();
           });
@@ -725,13 +721,14 @@
             /*jslint unparam: true*/
             callback(myError);
           });
-          sinon.stub(persistor, 'errorParser', function (error) {
+          sinon.stub(persistor, 'parseError', function (error) {
             return error;
           });
         });
         it('should call the callback with the error', function (done) {
           persistor.getAll(function (err, records) {
-            err.should.equal(myError);
+            should.exist(err);
+            err.name.should.equal(myError.name);
             should.not.exist(records);
             done();
           });

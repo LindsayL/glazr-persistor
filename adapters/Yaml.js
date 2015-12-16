@@ -5,6 +5,7 @@
     fse = require('graceful-fs-extra'),
     path = require('path'),
     yaml = require('js-yaml'),
+    helper = require('../helper'),
     YamlPersistor;
 
 
@@ -202,18 +203,18 @@
       if (err && err.code === 'ENOENT') {
         err.status = self.notFoundError;
         err.message = 'YamlPersistor: Could not find "' + path.resolve(self.filePath) + '".';
-        return callback(err);
+        return callback(self.parseError(err));
       }
       try {
         data = yaml.safeLoad(data);
       } catch (e) {
         e.status = self.serverError;
         e.message = 'YamlPersistor: Could not parse "' + path.resolve(self.filePath) + '".';
-        return callback(e);
+        return callback(self.parseError(e));
       }
 
       // Else return the err (if success err == null)
-      return callback(err, data);
+      return callback(self.parseError(err), data);
     });
   };
 
@@ -232,7 +233,7 @@
     } catch (e) {
       e.status = self.clientError;
       e.message = 'YamlPersistor: Could not convert "' + JSON.stringify(data) + '"to yaml.';
-      return callback(e);
+      return callback(self.parseError(e));
     }
 
     fse.writeFile(self.filePath, data, function (err) {
@@ -241,18 +242,22 @@
       if (err && err.code === 'ENOENT') {
         return fse.mkdirs(path.dirname(self.filePath), function (err) {
           if (err) {
-            callback(err);
+            callback(self.parseError(err));
           } else {
             fse.writeFile(self.filePath, data, function (err) {
-              callback(err);
+              callback(self.parseError(err));
             });
           }
         });
       }
 
       // Else return the err (if success err == null)
-      return callback(err);
+      return callback(self.parseError(err));
     });
+  };
+
+  YamlPersistor.prototype.parseError = function (error) {
+    return helper.parseError(error);
   };
 
   module.exports = YamlPersistor;
