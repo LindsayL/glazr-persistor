@@ -4,6 +4,7 @@
   var
     ldap = require('ldapjs'),
     utils = require('glazr-utils'),
+    helper = require('../helper'),
     LdapPersistor;
 
   /**
@@ -29,9 +30,10 @@
       ];
 
     utils.forEach(requiredParams, function (index, object) {
+      /*jslint unparam:true*/
       if (options[object] === undefined || options[object] === null) {
-        throw new Error('Persistor initialization: options.type="Ldap", '
-          + 'No ' + object + ' specified in options.config (see readme).');
+        throw self.parseError(new Error('Persistor initialization: options.type="Ldap", '
+          + 'No ' + object + ' specified in options.config (see readme).'));
       }
       self[object] = options[object];
     });
@@ -106,9 +108,8 @@
       createOwnDn = false,
       self = this;
     self.authenticate(function (err) {
-      err = self.errorParser(err);
       if (err) {
-        return callback(err);
+        return callback(self.parseError(err));
       }
 
       if (!dn) {
@@ -117,14 +118,14 @@
       }
       try {
         self.client.add(String(dn), record, [], function (err) {
-          err = self.errorParser(err);
+          err = self.parseError(err);
           if (createOwnDn && err && err.name === 'EntryAlreadyExistsError') {
             return self.add(undefined, record, callback);
           }
           return callback(err, dn);
         });
       } catch (e) {
-        e = self.errorParser(e);
+        e = self.parseError(e);
         callback(e);
       }
     });
@@ -137,10 +138,9 @@
     self.search(id, 'base', function (err, results) {
       if (!err && results.length === 0) {
         err = {name: 'NoSuchObjectError'};
-        err = self.errorParser(err);
       }
       if (err) {
-        return callback(err);
+        return callback(self.parseError(err));
       }
 
       return callback(null, results[0]);
@@ -153,8 +153,7 @@
 
     self.search(self.searchBase, 'sub', function (err, results) {
       if (err) {
-        err = self.errorParser(err);
-        return callback(err);
+        return callback(self.parseError(err));
       }
 
       return callback(null, results);
@@ -209,16 +208,15 @@
       self = this;
     self.authenticate(function (err) {
       if (err) {
-        return callback(err);
+        return callback(self.parseError(err));
       }
 
       try {
         self.client.del(String(id), [], function (err) {
-          err = self.errorParser(err);
-          return callback(err);
+          return callback(self.parseError(err));
         });
       } catch (e) {
-        return callback(self.errorParser(e));
+        return callback(self.parseError(e));
       }
     });
   };
@@ -255,27 +253,25 @@
 
     try {
       self.client.search(String(dn), opts, function (err, res) {
-        err = self.errorParser(err);
         if (err) {
-          return callback(err);
+          return callback(self.parseError(err));
         }
 
         res.on('searchEntry', function (entry) {
           results.push(self.formatData(entry));
         });
         res.on('searchReference', function (err) {
-          return callback(self.errorParser(err));
+          return callback(self.parseError(err));
         });
         res.on('error', function (err) {
-          return callback(self.errorParser(err));
+          return callback(self.parseError(err));
         });
         res.on('end', function (err) {
-          err = self.errorParser(err);
-          return callback(err, results);
+          return callback(self.parseError(err), results);
         });
       });
     } catch (e) {
-      return callback(self.errorParser(e));
+      return callback(self.parseError(e));
     }
   };
 
@@ -323,7 +319,7 @@
    * @param {object} err - The original error.
    * @returns {object} The translated error.
    */
-  LdapPersistor.prototype.errorParser = function (err) {
+  LdapPersistor.prototype.parseError = function (err) {
     if (!err || (!err.status && !err.message && !err.name)) {
       // We don't really have an error
       return undefined;
@@ -348,7 +344,8 @@
       error.name = 'MissingAttribute';
       error.message = 'Missing required attributes to create an object of class "' + this.entryObjectClass + '"';
     }
-    return error;
+
+    return helper.parseError(error);
   };
 
   module.exports = LdapPersistor;

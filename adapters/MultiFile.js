@@ -7,13 +7,14 @@
     fse = require('graceful-fs-extra'),
     path = require('path'),
     utils = require('glazr-utils'),
+    helper = require('../helper'),
     MultiFilePersistor;
 
 
   MultiFilePersistor = function (options) {
     if (!options.dir) {
-      throw new Error('Persistor initialization: type="MultiFile", '
-        + 'No dir specified in options.config (see readme).');
+      throw this.parseError(new Error('Persistor initialization: type="MultiFile", '
+        + 'No dir specified in options.config (see readme).'));
     }
     this.dir = options.dir;
     this.notFoundError = 404;
@@ -38,7 +39,7 @@
         if (err) {
           err.status = self.clientError;
         }
-        callback(err, id);
+        callback(self.parseError(err), id);
       });
     };
 
@@ -57,13 +58,13 @@
           fse.mkdirs(self.dir, function (err) {
             if (err) {
               err.status = self.serverError;
-              return callback(err);
+              return callback(self.parseError(err));
             }
             createFn([], callback);
           });
         } else {
           err.status = self.serverError;
-          callback(err);
+          callback(self.parseError(err));
         }
       } else {
         createFn(files, callback);
@@ -79,7 +80,7 @@
           err.status = self.notFoundError;
           err.message = 'Failed to find ' + self.dir + '/' + id + '.json';
         }
-        return callback(err);
+        return callback(self.parseError(err));
       }
 
       callback(null, contents);
@@ -96,9 +97,9 @@
           barrier = utils.syncBarrier(files.length, function (err) {
             if (err && err.length) {
               err[0].status = self.serverError;
-              return callback(err[0]);
+              return callback(self.parseError(err)[0]);
             }
-            callback(err, records);
+            callback(self.parseError(err), records);
           });
         utils.forEach(files, function (index, file) {
           /*jslint unparam: true*/
@@ -118,9 +119,9 @@
           } else {
             err.status = self.serverError;
           }
-          return callback(err);
+          return callback(self.parseError(err));
         }
-        callback(err, records);
+        callback(self.parseError(err), records);
       }
     });
   };
@@ -134,7 +135,7 @@
         return callback(err);
       }
       fse.writeJson(self.dir + '/' + updatedRecord.id + '.json', updatedRecord, function (err) {
-        callback(err);
+        callback(self.parseError(err));
       });
     });
   };
@@ -144,11 +145,13 @@
       self = this;
 
     fse.remove(self.dir + '/' + id + '.json', function (err) {
-      callback(err);
+      callback(self.parseError(err));
     });
   };
 
-
+  MultiFilePersistor.prototype.parseError = function (error) {
+    return helper.parseError(error);
+  };
 
   module.exports = MultiFilePersistor;
 }());
