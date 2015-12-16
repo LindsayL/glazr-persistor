@@ -3,7 +3,7 @@
 //(function () {
 //  'use strict';
 //  var
-//    fse = require('fs-extra'),
+//    fse = require('graceful-fs-extra'),
 //    path = require('path'),
 //    MultiFile = require('../../../../app/persistors/MultiFile');
 //

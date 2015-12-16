@@ -1,4 +1,4 @@
-/*jslint node:true, unmember: true*/
+/*jslint node:true*/
 /*globals describe, it, before, beforeEach, after, afterEach, vars, path, fse*/
 
 (function () {
@@ -269,6 +269,7 @@
               ];
 
             utils.forEach(records, function (index, record) {
+              /*jslint unparam:true*/
               // Find the matching record
               for (i = 0; i < ids.length; i += 1) {
                 if (record.id === ids[i]) {
@@ -370,8 +371,9 @@
         });
         it('should update only the first record', function (done) {
           persistor.get(id1, function (err, record) {
+            should.not.exist(err);
             myUpdatedItem = utils.merge(record, updatedItem);
-            persistor.update(myUpdatedItem, function (err, id) {
+            persistor.update(myUpdatedItem, function (err) {
               should.not.exist(err);
               persistor.get(id1, function (err, record) {
                 should.not.exist(err);
@@ -382,6 +384,7 @@
                   record.id.should.equal(id2);
                   JSON.stringify(record[testParam]).should.equal(JSON.stringify(item2[testParam]));
                   persistor.get(id3, function (err, record) {
+                    should.not.exist(err);
                     record.id.should.equal(id3);
                     JSON.stringify(record[testParam]).should.equal(JSON.stringify(item3[testParam]));
                     done();
@@ -393,6 +396,7 @@
         });
         it('should update only the second record', function (done) {
           persistor.get(id2, function (err, record) {
+            should.not.exist(err);
             myUpdatedItem = utils.merge(record, updatedItem);
             persistor.update(myUpdatedItem, function (err) {
               should.not.exist(err);
@@ -405,6 +409,7 @@
                   record.id.should.equal(id1);
                   JSON.stringify(record[testParam]).should.equal(JSON.stringify(item1[testParam]));
                   persistor.get(id3, function (err, record) {
+                    should.not.exist(err);
                     record.id.should.equal(id3);
                     JSON.stringify(record[testParam]).should.equal(JSON.stringify(item3[testParam]));
                     done();
@@ -416,6 +421,7 @@
         });
         it('should update only the third record', function (done) {
           persistor.get(id3, function (err, record) {
+            should.not.exist(err);
             myUpdatedItem = utils.merge(record, updatedItem);
             persistor.update(myUpdatedItem, function (err) {
               should.not.exist(err);
@@ -428,6 +434,7 @@
                   record.id.should.equal(id2);
                   JSON.stringify(record[testParam]).should.equal(JSON.stringify(item2[testParam]));
                   persistor.get(id1, function (err, record) {
+                    should.not.exist(err);
                     record.id.should.equal(id1);
                     JSON.stringify(record[testParam]).should.equal(JSON.stringify(item1[testParam]));
                     done();
@@ -485,6 +492,81 @@
         });
       });
 
+    });
+
+    describe('heavy request load', function () {
+    it('!!!!!fix the tests below!!!!!');
+    //  this.timeout(60000);
+    //  var
+    //    numReqs = 10,
+    //    ids,
+    //    loopFn;
+    //
+    //  loopFn = function (fn, callback) {
+    //    var
+    //      barrier = utils.syncBarrier(numReqs, callback),
+    //      i;
+    //    for (i = 0; i < numReqs; i += 1) {
+    //      fn(i, barrier);
+    //    }
+    //  };
+    //  beforeEach(function (done) {
+    //    ids = [];
+    //    var
+    //      createFn = function (iteration, callback) {
+    //        /*jslint unparam:true*/
+    //        persistor.create(item1, function (err, recordId) {
+    //          should.not.exist(err);
+    //          should.exist(recordId);
+    //          ids.push(recordId);
+    //          callback();
+    //        });
+    //      };
+    //    loopFn(createFn, done);
+    //  });
+    //  it('should be able to create many entries', function () {
+    //    ids.length.should.equal(numReqs);
+    //  });
+    //  it('should be able to update many entries', function (done) {
+    //    var
+    //      updateFn = function (iteration, callback) {
+    //        item2.id = ids[iteration];
+    //        persistor.update(item2, function (err) {
+    //          should.not.exist(err);
+    //          callback();
+    //        });
+    //      };
+    //    loopFn(updateFn, done);
+    //  });
+    //  it('should be able to get many entries', function (done) {
+    //    var
+    //      getFn = function (iteration, callback) {
+    //        persistor.get(ids[iteration], function (err, record) {
+    //          should.not.exist(err);
+    //          should.exist(record);
+    //          callback();
+    //        });
+    //      };
+    //    loopFn(getFn, done);
+    //  });
+    //  it('should be able to getAll with many entries', function (done) {
+    //    persistor.getAll(function (err, records) {
+    //      should.not.exist(err);
+    //      should.exist(records);
+    //      records.length.should.equal(numReqs);
+    //      done();
+    //    });
+    //  });
+    //  it('should be able to remove many entries', function (done) {
+    //    var
+    //      removeFn = function (iteration, callback) {
+    //        persistor.remove(ids[iteration], function (err) {
+    //          should.not.exist(err);
+    //          callback();
+    //        });
+    //      };
+    //    loopFn(removeFn, done);
+    //  });
     });
   };
 
