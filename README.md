@@ -1,7 +1,10 @@
 # glazr-persistor
 
 #####Currently supports persistence via:
-- LocalFile 
+- [LocalFile](#LocalFile)
+- MultiFile
+- Yaml
+- Ldap
 
 #####Usage
 ```
@@ -10,11 +13,10 @@ var
   persistor,
   options;
   
-  // More option configurations are defined in the readme....
   options = {
     type: 'LocalFile',
     config: {
-      filePaht: 'some/path/file.txt'
+      filePath: 'some/path/file.txt'
       }
     };
   
