@@ -1,7 +1,7 @@
 # glazr-persistor
 
 #####Currently supports persistence via:
-- [LocalFile](#LocalFile)
+- [LocalFile](#localfile)
 - MultiFile
 - Yaml
 - Ldap
