@@ -91,7 +91,7 @@ NOTE: Local files do a maximum size limit before trouble can occur.  Storing som
 
 
 # Ldap
-Ldap connects to a ldap server and gives access to all entries of type *entryObjectClass*, within the directory *searchBase*.  The params of your object (for *create* and *update*) must match the schema of type *entryObjectClass*.  Furthermore, params of ldap objects tend to all have values consisting of an array, except for special params ().
+Ldap connects to a ldap server and gives access to all entries of type *entryObjectClass*, within the directory *searchBase*.  
 ```
 options = {
   type: 'Ldap',
@@ -104,3 +104,16 @@ options = {
   }
 };
 ```
+
+The basic format of an object going into or coming out of the ldap persistor is:
+```
+record = {
+  id: 'theDn', // eg. 'cn=group1,ou=groups,dc=ca' 
+  dn: 'theDn', // eg. 'cn=group1,ou=groups,dc=ca' 
+  attributes: {  // As defined by the schema
+    member: ['mem1', 'mem2'],
+    name: ['theBestGroup']
+  }
+}
+```
+The *attributes* of your object must match the schema of type *entryObjectClass*.  Furthermore, all *attribute*s' values are arrays (even those that only support having one value.  The dn is duplicated in top level params *id* and *dn* so that if you wish to change the dn of a record you should just modify the *dn* value (the *id* tells the persistor which record to change).
