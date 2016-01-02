@@ -116,4 +116,4 @@ record = {
   }
 }
 ```
-The *attributes* of your object must match the schema of type *entryObjectClass*.  Furthermore, all *attribute*s' values are arrays (even those that only support having one value.  The dn is duplicated in top level params *id* and *dn* so that if you wish to change the dn of a record you should just modify the *dn* value (the *id* tells the persistor which record to change).
+The *attributes* of your object must match the schema of type *entryObjectClass*.  Furthermore, all *attribute*s' values are arrays (even those that only support having one value.  The dn is duplicated in top level params *id* and *dn* so that if you wish to change the dn of a record you should just modify the *dn* value. (The *id* tells the persistor which record to change.)
