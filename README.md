@@ -6,7 +6,7 @@
 - [Yaml](#yaml)
 - [Ldap](#ldap)
 
-#####Usage
+#Usage
 ```
 var 
   Persistor = require('glazr-persistor'),
@@ -52,7 +52,7 @@ The callback returns nothing on successful update.
 
 The callback returns nothing on successful removal of the record.
 
-## LocalFile
+# LocalFile
 ```
 options = {
   type: 'LocalFile',
@@ -64,7 +64,7 @@ options = {
 NOTE: Local files do a maximum size limit before trouble can occur.  Storing something like ~50 screenshots in one file can cause your node/docker server to restart losing all data.
 
 
-## MultiFile
+# MultiFile
 ```
 options = {
   type: 'MultiFile',
