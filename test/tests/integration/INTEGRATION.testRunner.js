@@ -12,7 +12,8 @@
     testParam,
     testObjects,
     temp,
-    config;
+    config,
+    i;
 
   describe("INTEGRATION", function () {
     try {
@@ -55,15 +56,11 @@
 
       testParam = 'param';
       testObjects = [];
-      temp = {};
-      temp[testParam] = 'blah1';
-      testObjects.push(temp);
-      temp[testParam] = 'blah2';
-      testObjects.push(temp);
-      temp[testParam] = 'blah3';
-      testObjects.push(temp);
-      temp[testParam] = 'blah4';
-      testObjects.push(temp);
+      for (i = 0; i < 4; i += 1) {
+        temp = {};
+        temp[testParam] = 'blah' + String(i);
+        testObjects.push(temp);
+      }
 
       testSuite(persistor, refreshResourceFn, refreshResourceFn, testObjects, testParam);
     });
@@ -134,24 +131,26 @@
       // Create refreshResourceFn
       refreshResourceFn = function (done) {
         removeResourceFn(function () {
-          persistor.adapter.add(options.config.searchBase, {objectClass: 'organizationalUnit'}, function (err) {
+          persistor.adapter.add(options.config.searchBase, {objectClass: ['organizationalUnit']}, function (err) {
             should.not.exist(err);
             done();
           });
         });
       };
 
-      testParam = 'member';
+      testParam = 'attributes';
       testObjects = [];
-      temp = {};
-      temp[testParam] = ['cn=blah1', 'cn=blahblah1'];
-      testObjects.push(temp);
-      temp[testParam] = ['cn=blah2', 'cn=blahblah2'];
-      testObjects.push(temp);
-      temp[testParam] = ['cn=blah3', 'cn=blahblah3'];
-      testObjects.push(temp);
-      temp[testParam] = ['cn=blah4', 'cn=blahblah4'];
-      testObjects.push(temp);
+      for (i = 0; i < 4; i += 1) {
+        temp = {};
+        temp[testParam] = 'blah' + String(i);
+        temp[testParam] = {
+          cn: ['temp' + String(i + 1)],
+          objectClass: [options.config.entryObjectClass],
+          member: ['cn=blah' + String(i + 1), 'cn=blahblah' + String(i + 1)]
+        };
+        testObjects.push(temp);
+      }
+      delete testObjects[3][testParam].cn;
 
       testSuite(persistor, refreshResourceFn, removeResourceFn, testObjects, testParam);
     });
@@ -181,15 +180,11 @@
 
       testParam = 'param';
       testObjects = [];
-      temp = {};
-      temp[testParam] = 'blah1';
-      testObjects.push(temp);
-      temp[testParam] = 'blah2';
-      testObjects.push(temp);
-      temp[testParam] = 'blah3';
-      testObjects.push(temp);
-      temp[testParam] = 'blah4';
-      testObjects.push(temp);
+      for (i = 0; i < 4; i += 1) {
+        temp = {};
+        temp[testParam] = 'blah' + String(i);
+        testObjects.push(temp);
+      }
 
       testSuite(persistor, refreshResourceFn, refreshResourceFn, testObjects, testParam);
     });
@@ -226,15 +221,11 @@
 
       testParam = 'param';
       testObjects = [];
-      temp = {};
-      temp[testParam] = 'blah1';
-      testObjects.push(temp);
-      temp[testParam] = 'blah2';
-      testObjects.push(temp);
-      temp[testParam] = 'blah3';
-      testObjects.push(temp);
-      temp[testParam] = 'blah4';
-      testObjects.push(temp);
+      for (i = 0; i < 4; i += 1) {
+        temp = {};
+        temp[testParam] = 'blah' + String(i);
+        testObjects.push(temp);
+      }
 
       testSuite(persistor, refreshResourceFn, refreshResourceFn, testObjects, testParam);
     });

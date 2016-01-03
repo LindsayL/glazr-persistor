@@ -12,19 +12,23 @@
       CLIENT_ERROR_CODE = 400,
       NOT_FOUND_CODE = 404,
       id,
-      item1 = testObjects[0],
-      item2 = testObjects[1],
-      item3 = testObjects[2],
-      updatedItem = testObjects[3];
+      item1,
+      item2,
+      item3,
+      updatedItem;
 
     beforeEach(function (done) {
+      item1 = JSON.parse(JSON.stringify(testObjects[0]));
+      item2 = JSON.parse(JSON.stringify(testObjects[1]));
+      item3 = JSON.parse(JSON.stringify(testObjects[2]));
+      updatedItem = JSON.parse(JSON.stringify(testObjects[3]));
       refreshResourceFn(done);
     });
     after(function (done) {
       refreshResourceFn(done);
     });
 
-    describe("#create(item1, callback)", function () {
+    describe("#create(item, callback)", function () {
 
       describe("resource does not exist", function () {
         beforeEach(function (done) {

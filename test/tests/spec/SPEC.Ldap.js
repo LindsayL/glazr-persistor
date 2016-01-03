@@ -328,16 +328,16 @@
       it('should not modify the original record', function () {
         JSON.stringify(result).should.not.equal(JSON.stringify(record));
       });
-      it('should not have attributes property anymore', function () {
-        should.not.exist(result.attributes);
+      it('should have attributes property', function () {
+        should.exist(result.attributes);
       });
       it('should have "id"', function () {
         should.exist(result.id);
         result.id.should.equal(record.dn);
       });
-      it('should have "name"', function () {
-        should.exist(result.name);
-        result.name.should.equal(record.dn);
+      it('should have "dn"', function () {
+        should.exist(result.dn);
+        result.dn.should.equal(record.dn);
       });
       it('should reformat attributes into own properties', function () {
         var
@@ -345,7 +345,7 @@
           attr;
         for (i = 0; i < record.attributes.length; i += 1) {
           attr = record.attributes[i];
-          JSON.stringify(result[attr.type]).should.equal(JSON.stringify(attr.vals));
+          JSON.stringify(result.attributes[attr.type]).should.equal(JSON.stringify(attr.vals));
         }
       });
     });

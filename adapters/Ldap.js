@@ -61,27 +61,26 @@
     var
       self = this,
       i,
-      subDn,
-      dn;
+      subDn;
 
     // Prepare the record
-    record.objectClass = self.entryObjectClass;
-
-    // Get the dn
-    dn = record.name;
-    delete record.name;
+    record = JSON.parse(JSON.stringify(record));
+    record.attributes.objectClass = [self.entryObjectClass];
+    if (!record.dn && record.attributes && record.attributes.cn) {
+      record.dn = 'cn=' + record.attributes.cn + ',' + self.searchBase;
+    }
 
     // Get the super dn of the dn
-    subDn = dn;
-    if (!subDn) {
-      subDn = self.getNewDn();
+    if (record.dn) {
+      subDn = record.dn.split(',');
+      subDn[0] = subDn[1];
+      for (i = 2; i < subDn.length; i += 1) {
+        subDn[0] += ',' + subDn[i];
+      }
+      subDn = subDn[0];
+    } else {
+      subDn = self.searchBase;
     }
-    subDn = subDn.split(',');
-    subDn[0] = subDn[1];
-    for (i = 2; i < subDn.length; i += 1) {
-      subDn[0] += ',' + subDn[i];
-    }
-    subDn = subDn[0];
 
     // Check that super dn exists
     self.search(subDn, 'base', function (err) {
@@ -94,11 +93,11 @@
       }
 
       // If super dn existed do the add!
-      return self.add(dn, record, callback);
+      return self.add(record.dn, record.attributes, callback);
     }, null);
   };
 
-  LdapPersistor.prototype.add = function (dn, record, callback) {
+  LdapPersistor.prototype.add = function (dn, attributes, callback) {
     var
       createOwnDn = false,
       self = this;
@@ -112,11 +111,11 @@
         dn = self.getNewDn();
       }
       try {
-        self.client.add(String(dn), record, [], function (err) {
+        self.client.add(String(dn), attributes, [], function (err) {
           self.client.unbind();
           err = self.parseError(err);
           if (createOwnDn && err && err.name === 'EntryAlreadyExistsError') {
-            return self.add(undefined, record, callback);
+            return self.add(undefined, attributes, callback);
           }
           return callback(err, dn);
         });
@@ -158,25 +157,16 @@
 
   LdapPersistor.prototype.update = function (updatedRecord, callback) {
     var
-      oldRecord,
-      dn = updatedRecord.id,
       self = this;
 
-    delete updatedRecord.id;
-    oldRecord = JSON.parse(JSON.stringify(updatedRecord));
-    oldRecord.name = dn;
-
     // Ensure the record actually exists
-    self.get(dn, function (err) {
+    self.get(updatedRecord.id, function (err, oldRecord) {
       if (err) {
         return callback(err);
       }
-      if (!updatedRecord.name) {
-        updatedRecord.name = dn;
-      }
 
       // Remove old record
-      self.remove(dn, function (err) {
+      self.remove(oldRecord.dn, function (err) {
         if (err) {
           return callback(err);
         }
@@ -186,6 +176,7 @@
           if (err) {
             // If we failed to create, recreate the old one
             self.create(oldRecord, function (err2, id) {
+              /*jslint unparam:true*/
               if (err2) {
                 return callback(err2);
               }
@@ -284,19 +275,19 @@
     var
       i,
       attr,
-      transformedData = {};
+      transformedData = {attributes: {}};
 
     if (record.attributes) {
       // Add attributes to top level
       for (i = 0; i < record.attributes.length; i += 1) {
         attr = record.attributes[i];
-        transformedData[attr.type] = attr.vals;
+        transformedData.attributes[attr.type] = attr.vals;
       }
     }
 
     // Add special attributes
     transformedData.id = record.dn;
-    transformedData.name = record.dn;
+    transformedData.dn = record.dn;
     return transformedData;
   };
 
